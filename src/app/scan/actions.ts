@@ -1,0 +1,393 @@
+"use server";
+
+import { writeAuditLog } from "@/lib/automation/audit";
+import { prisma } from "@/lib/prisma";
+import {
+  findEmployeeByBadge,
+  findItemByPrefixedId,
+  isToolAvailable,
+  isToolCheckedOut,
+  isToolMissing,
+  MATERIAL_ACTIONS,
+  nextMaterialTxnCode,
+  nextToolTxnCode,
+  TOOL_ACTIONS,
+  TOOL_STATUS,
+  type EmployeeSummary,
+  type ItemSummary,
+} from "@/lib/scan";
+
+export type LookupEmployeeResult =
+  | { ok: true; employee: EmployeeSummary }
+  | { ok: false; error: string };
+
+export type LookupItemResult =
+  | { ok: true; item: ItemSummary }
+  | { ok: false; error: string };
+
+export type SubmitScanResult =
+  | { ok: true; message: string }
+  | { ok: false; error: string };
+
+export async function lookupEmployeeAction(
+  badgeInput: string,
+): Promise<LookupEmployeeResult> {
+  const trimmed = badgeInput.trim();
+  if (!trimmed) {
+    return { ok: false, error: "Enter a badge ID." };
+  }
+
+  const employee = await findEmployeeByBadge(trimmed);
+  if (!employee) {
+    return {
+      ok: false,
+      error: `No employee found for badge "${trimmed}".`,
+    };
+  }
+
+  return { ok: true, employee };
+}
+
+export async function lookupItemAction(
+  itemInput: string,
+): Promise<LookupItemResult> {
+  const trimmed = itemInput.trim();
+  if (!trimmed) {
+    return { ok: false, error: "Enter a tool or material ID." };
+  }
+
+  const upper = trimmed.toUpperCase();
+  if (!upper.startsWith("TL-") && !upper.startsWith("MAT-")) {
+    return {
+      ok: false,
+      error: 'ID must start with "TL-" (tool) or "MAT-" (material).',
+    };
+  }
+
+  const item = await findItemByPrefixedId(trimmed);
+  if (!item) {
+    const kind = upper.startsWith("TL-") ? "tool" : "material";
+    return {
+      ok: false,
+      error: `No ${kind} found for "${trimmed.toUpperCase()}".`,
+    };
+  }
+
+  return { ok: true, item };
+}
+
+export async function submitScanAction(input: {
+  badgeInput: string;
+  itemInput: string;
+  action: string;
+  qtyPurpose: string;
+}): Promise<SubmitScanResult> {
+  const badgeInput = input.badgeInput.trim();
+  const itemInput = input.itemInput.trim();
+  const action = input.action.trim();
+  const qtyPurpose = input.qtyPurpose.trim();
+
+  if (!badgeInput) return { ok: false, error: "Badge ID is required." };
+  if (!itemInput) return { ok: false, error: "Tool or Material ID is required." };
+  if (!action) return { ok: false, error: "Select an action." };
+
+  const employee = await findEmployeeByBadge(badgeInput);
+  if (!employee) {
+    return { ok: false, error: `No employee found for badge "${badgeInput}".` };
+  }
+
+  const item = await findItemByPrefixedId(itemInput);
+  if (!item) {
+    return {
+      ok: false,
+      error: `No tool or material found for "${itemInput}".`,
+    };
+  }
+
+  if (item.kind === "tool") {
+    return submitToolScan({
+      employee,
+      toolCode: item.tool_id,
+      action,
+      purpose: qtyPurpose,
+    });
+  }
+
+  return submitMaterialScan({
+    employee,
+    materialCode: item.material_id,
+    action,
+    qtyPurpose,
+  });
+}
+
+async function submitToolScan(args: {
+  employee: EmployeeSummary;
+  toolCode: string;
+  action: string;
+  purpose: string;
+}): Promise<SubmitScanResult> {
+  const { employee, toolCode, action, purpose } = args;
+  const now = new Date();
+
+  try {
+    if (action === TOOL_ACTIONS.CHECK_OUT) {
+      await prisma.$transaction(async (tx) => {
+        const tool = await tx.tool.findUnique({ where: { tool_id: toolCode } });
+        if (!tool) throw new Error("Tool not found.");
+        if (isToolMissing(tool.status)) {
+          throw new Error("Cannot check out a missing tool.");
+        }
+        if (isToolCheckedOut(tool.status)) {
+          throw new Error("Tool is already checked out.");
+        }
+        if (!isToolAvailable(tool.status)) {
+          throw new Error(
+            `Tool status "${tool.status}" does not allow check-out.`,
+          );
+        }
+
+        const transaction_id = await nextToolTxnCode(tx);
+        await tx.toolTransaction.create({
+          data: {
+            transaction_id,
+            occurred_at: now,
+            tool_id: tool.tool_id,
+            employee_id: employee.id,
+            badge_id: employee.badge_id,
+            employee_name: employee.name,
+            tool_name: tool.name,
+            action: TOOL_ACTIONS.CHECK_OUT,
+            purpose: purpose || null,
+          },
+        });
+
+        await tx.tool.update({
+          where: { tool_id: tool.tool_id },
+          data: {
+            status: TOOL_STATUS.CHECKED_OUT,
+            last_checked_out_by: employee.name,
+            checkout_time: now,
+            auto_status: null,
+            overdue_since: null,
+          },
+        });
+
+        await writeAuditLog(
+          {
+            entityType: "tool",
+            entityId: tool.tool_id,
+            action: "Tool Check-Out",
+            details: `Checked out by ${employee.name} (${employee.badge_id})${purpose ? `; purpose: ${purpose}` : ""}`,
+            user: employee.name,
+            toolId: tool.tool_id,
+            occurredAt: now,
+          },
+          tx,
+        );
+      });
+
+      return { ok: true, message: "Tool checked out successfully." };
+    }
+
+    if (action === TOOL_ACTIONS.CHECK_IN) {
+      await prisma.$transaction(async (tx) => {
+        const tool = await tx.tool.findUnique({ where: { tool_id: toolCode } });
+        if (!tool) throw new Error("Tool not found.");
+        if (isToolAvailable(tool.status)) {
+          throw new Error("Tool is already available (cannot check in).");
+        }
+        if (!isToolCheckedOut(tool.status) && !isToolMissing(tool.status)) {
+          throw new Error(
+            `Tool status "${tool.status}" does not allow check-in.`,
+          );
+        }
+
+        const transaction_id = await nextToolTxnCode(tx);
+        await tx.toolTransaction.create({
+          data: {
+            transaction_id,
+            occurred_at: now,
+            tool_id: tool.tool_id,
+            employee_id: employee.id,
+            badge_id: employee.badge_id,
+            employee_name: employee.name,
+            tool_name: tool.name,
+            action: TOOL_ACTIONS.CHECK_IN,
+            purpose: purpose || null,
+          },
+        });
+
+        await tx.tool.update({
+          where: { tool_id: tool.tool_id },
+          data: {
+            status: TOOL_STATUS.AVAILABLE,
+            last_checked_out_by: null,
+            checkout_time: null,
+            auto_status: null,
+            overdue_since: null,
+          },
+        });
+
+        await writeAuditLog(
+          {
+            entityType: "tool",
+            entityId: tool.tool_id,
+            action: "Tool Check-In",
+            details: `Checked in by ${employee.name} (${employee.badge_id})${purpose ? `; purpose: ${purpose}` : ""}`,
+            user: employee.name,
+            toolId: tool.tool_id,
+            occurredAt: now,
+          },
+          tx,
+        );
+      });
+
+      return { ok: true, message: "Tool checked in successfully." };
+    }
+
+    return {
+      ok: false,
+      error: `Unknown tool action "${action}". Use Checked Out or Checked In.`,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Tool scan failed.",
+    };
+  }
+}
+
+async function submitMaterialScan(args: {
+  employee: EmployeeSummary;
+  materialCode: string;
+  action: string;
+  qtyPurpose: string;
+}): Promise<SubmitScanResult> {
+  const { employee, materialCode, action, qtyPurpose } = args;
+  const qty = Number(qtyPurpose);
+  const now = new Date();
+
+  if (!Number.isFinite(qty) || qty <= 0) {
+    return {
+      ok: false,
+      error: "Enter a positive quantity for materials.",
+    };
+  }
+
+  try {
+    if (action === MATERIAL_ACTIONS.ISSUE) {
+      await prisma.$transaction(async (tx) => {
+        const material = await tx.material.findUnique({
+          where: { material_id: materialCode },
+        });
+        if (!material) throw new Error("Material not found.");
+        if (material.current_qty < qty) {
+          throw new Error(
+            `Insufficient quantity (available: ${material.current_qty}).`,
+          );
+        }
+
+        const remaining = material.current_qty - qty;
+        const transaction_id = await nextMaterialTxnCode(tx);
+
+        await tx.materialTransaction.create({
+          data: {
+            transaction_id,
+            occurred_at: now,
+            material_id: material.material_id,
+            employee_id: employee.id,
+            badge_id: employee.badge_id,
+            employee_name: employee.name,
+            material_name: material.name,
+            qty_taken: qty,
+            unit: material.unit,
+            remaining_qty: remaining,
+          },
+        });
+
+        await tx.material.update({
+          where: { material_id: material.material_id },
+          data: {
+            current_qty: remaining,
+            last_taken_by: employee.name,
+            status: remaining <= material.min_qty ? "Low Stock" : "OK",
+          },
+        });
+
+        await writeAuditLog(
+          {
+            entityType: "material",
+            entityId: material.material_id,
+            action: "Material Take",
+            details: `Took ${qty} ${material.unit ?? "unit(s)"} by ${employee.name} (${employee.badge_id}); remaining ${remaining}`,
+            user: employee.name,
+            occurredAt: now,
+          },
+          tx,
+        );
+      });
+
+      return { ok: true, message: `Issued ${qty} unit(s) of material.` };
+    }
+
+    if (action === MATERIAL_ACTIONS.RECEIVE) {
+      await prisma.$transaction(async (tx) => {
+        const material = await tx.material.findUnique({
+          where: { material_id: materialCode },
+        });
+        if (!material) throw new Error("Material not found.");
+
+        const remaining = material.current_qty + qty;
+        const transaction_id = await nextMaterialTxnCode(tx);
+
+        await tx.materialTransaction.create({
+          data: {
+            transaction_id,
+            occurred_at: now,
+            material_id: material.material_id,
+            employee_id: employee.id,
+            badge_id: employee.badge_id,
+            employee_name: employee.name,
+            material_name: material.name,
+            qty_taken: qty,
+            unit: material.unit,
+            remaining_qty: remaining,
+          },
+        });
+
+        await tx.material.update({
+          where: { material_id: material.material_id },
+          data: {
+            current_qty: remaining,
+            status: remaining <= material.min_qty ? "Low Stock" : "OK",
+          },
+        });
+
+        await writeAuditLog(
+          {
+            entityType: "material",
+            entityId: material.material_id,
+            action: "Material Receive",
+            details: `Received ${qty} ${material.unit ?? "unit(s)"} by ${employee.name} (${employee.badge_id}); remaining ${remaining}`,
+            user: employee.name,
+            occurredAt: now,
+          },
+          tx,
+        );
+      });
+
+      return { ok: true, message: `Received ${qty} unit(s) of material.` };
+    }
+
+    return {
+      ok: false,
+      error: `Unknown material action "${action}". Use Issue or Receive.`,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Material scan failed.",
+    };
+  }
+}

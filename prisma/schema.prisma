@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Employee Directory (Badge ID, Raw Emp Data, Employee Name, Job Title)
+model Employee {
+  id                    Int                   @id @default(autoincrement())
+  badge_id              String                @unique
+  raw_badge_data        String
+  name                  String
+  job_title             String?
+  created_at            DateTime              @default(now())
+  updated_at            DateTime              @updatedAt
+  tool_transactions     ToolTransaction[]
+  material_transactions MaterialTransaction[]
+
+  @@map("employees")
+}
+
+/// Tool Inventory (Tool ID … Overdue Since)
+model Tool {
+  id                   Int               @id @default(autoincrement())
+  tool_id              String            @unique
+  name                 String
+  category             String?
+  location             String?
+  status               String            @default("Available")
+  last_checked_out_by  String?
+  condition            String?           @default("Good")
+  notes                String?
+  checkout_time        DateTime?
+  auto_status          String?
+  overdue_since        DateTime?
+  created_at           DateTime          @default(now())
+  updated_at           DateTime          @updatedAt
+  tool_transactions    ToolTransaction[]
+
+  @@map("tools")
+}
+
+/// Tool Transactions / TransactionLog
+model ToolTransaction {
+  id             Int      @id @default(autoincrement())
+  transaction_id String   @unique
+  occurred_at    DateTime
+  badge_id       String
+  employee_id    Int?
+  employee       Employee? @relation(fields: [employee_id], references: [id])
+  employee_name  String?
+  tool_id        String
+  tool           Tool     @relation(fields: [tool_id], references: [tool_id])
+  tool_name      String?
+  action         String
+  purpose        String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@index([badge_id])
+  @@index([tool_id])
+  @@map("tool_transactions")
+}
+
+/// Material Inventory
+model Material {
+  id                    Int                   @id @default(autoincrement())
+  material_id           String                @unique
+  name                  String
+  category              String?
+  unit                  String?
+  location              String?
+  current_qty           Float                 @default(0)
+  min_qty               Float                 @default(0)
+  status                String                @default("OK")
+  last_taken_by         String?
+  notes                 String?
+  low_stock_email_sent  Boolean               @default(false)
+  low_stock_email_date  DateTime?
+  low_stock_email_to    String?
+  created_at            DateTime              @default(now())
+  updated_at            DateTime              @updatedAt
+  material_transactions MaterialTransaction[]
+
+  @@map("materials")
+}
+
+/// Material Transactions
+model MaterialTransaction {
+  id             Int       @id @default(autoincrement())
+  transaction_id String    @unique
+  occurred_at    DateTime
+  badge_id       String
+  employee_id    Int?
+  employee       Employee? @relation(fields: [employee_id], references: [id])
+  employee_name  String?
+  material_id    String
+  material       Material  @relation(fields: [material_id], references: [material_id])
+  material_name  String?
+  qty_taken      Float
+  unit           String?
+  remaining_qty  Float?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([badge_id])
+  @@index([material_id])
+  @@map("material_transactions")
+}
+
+/// Security & Audit manual change log
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  audit_id    String   @unique
+  occurred_at DateTime
+  changed_by  String?
+  tool_id     String?
+  change_type String?
+  notes       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("audit_logs")
+}
+
+/// Admin Center / Overdue / Access / Alert settings (key-value)
+model Setting {
+  id         Int      @id @default(autoincrement())
+  key        String   @unique
+  value      String
+  notes      String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("settings")
+}
+
+/// Updates sheet change log
+model UpdateLog {
+  id            Int      @id @default(autoincrement())
+  update_number Int
+  event_date    DateTime
+  description   String
+  updated_by    String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("update_logs")
+}

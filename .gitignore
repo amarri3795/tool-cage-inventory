@@ -1,0 +1,18 @@
+# Environment
+.env
+.env*.local
+
+# Dependencies / build
+node_modules
+.next
+dist
+
+# Local SQLite leftovers (no longer used in production)
+*.db
+*.db-journal
+
+# Scratch
+_git_status.txt
+_git_remote.txt
+_vercel_where.txt
+_gh_where.txt
