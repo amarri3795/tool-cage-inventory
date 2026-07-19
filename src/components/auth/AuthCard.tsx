@@ -83,7 +83,8 @@ export function AuthCard({ mode }: Props) {
     } catch {
       setError(
         "Could not reach the server. Check your connection, or confirm the Vercel deploy is live.",
-      ); finally {
+      );
+    } finally {
       setBusy(false);
     }
   }
