@@ -47,7 +47,7 @@ export async function markMissingTools(options?: {
     const now = new Date();
     await prisma.$transaction(async (tx) => {
       await tx.tool.update({
-        where: { tool_id: tool.tool_id },
+        where: { id: tool.id },
         data: {
           status: TOOL_STATUS.MISSING,
           auto_status: "MISSING",

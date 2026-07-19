@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { AuthCard } from "@/components/auth/AuthCard";
 
-export default function HomePage() {
-  redirect("/dashboard");
+export default function SiteLoginPage() {
+  return <AuthCard mode="site-login" />;
 }

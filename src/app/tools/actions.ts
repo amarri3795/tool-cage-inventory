@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireSiteSession } from "@/lib/site-context";
 
 function str(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -22,6 +23,7 @@ export async function createTool(
   _prev: ToolActionState,
   formData: FormData,
 ): Promise<ToolActionState> {
+  const { siteId } = await requireSiteSession();
   const tool_id = str(formData, "tool_id");
   const name = str(formData, "name");
 
@@ -29,13 +31,16 @@ export async function createTool(
     return { error: "Tool ID and name are required." };
   }
 
-  const existing = await prisma.tool.findUnique({ where: { tool_id } });
+  const existing = await prisma.tool.findUnique({
+    where: { site_id_tool_id: { site_id: siteId, tool_id } },
+  });
   if (existing) {
     return { error: `Tool ID "${tool_id}" already exists.` };
   }
 
   await prisma.tool.create({
     data: {
+      site_id: siteId,
       tool_id,
       name,
       category: optional(formData, "category"),
@@ -56,6 +61,7 @@ export async function updateTool(
   _prev: ToolActionState,
   formData: FormData,
 ): Promise<ToolActionState> {
+  const { siteId } = await requireSiteSession();
   const tool_id = str(formData, "tool_id");
   const name = str(formData, "name");
 
@@ -63,8 +69,15 @@ export async function updateTool(
     return { error: "Tool ID and name are required." };
   }
 
+  const owned = await prisma.tool.findFirst({
+    where: { id, site_id: siteId },
+  });
+  if (!owned) {
+    return { error: "Tool not found." };
+  }
+
   const conflict = await prisma.tool.findFirst({
-    where: { tool_id, NOT: { id } },
+    where: { site_id: siteId, tool_id, NOT: { id } },
   });
   if (conflict) {
     return { error: `Tool ID "${tool_id}" already exists.` };

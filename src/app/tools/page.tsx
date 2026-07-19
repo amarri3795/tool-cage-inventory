@@ -1,34 +1,27 @@
 import { prisma } from "@/lib/prisma";
-import { ToolsTable } from "./tools-table";
+import { requireSiteSession } from "@/lib/site-context";
+import { ToolsTable, type ToolRow } from "./tools-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function ToolsPage() {
+  const { siteId } = await requireSiteSession();
   const tools = await prisma.tool.findMany({
+    where: { site_id: siteId },
     orderBy: { tool_id: "asc" },
   });
 
-  const rows = tools.map((tool) => ({
-    id: tool.id,
-    tool_id: tool.tool_id,
-    name: tool.name,
-    category: tool.category,
-    location: tool.location,
-    status: tool.status,
-    condition: tool.condition,
-    last_checked_out_by: tool.last_checked_out_by,
-    checkout_time: tool.checkout_time?.toISOString() ?? null,
+  const rows: ToolRow[] = tools.map((t) => ({
+    id: t.id,
+    tool_id: t.tool_id,
+    name: t.name,
+    category: t.category,
+    location: t.location,
+    status: t.status,
+    condition: t.condition,
+    last_checked_out_by: t.last_checked_out_by,
+    checkout_time: t.checkout_time?.toISOString() ?? null,
   }));
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Tools</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Search and manage tool inventory.
-        </p>
-      </div>
-      <ToolsTable rows={rows} />
-    </div>
-  );
+  return <ToolsTable rows={rows} />;
 }

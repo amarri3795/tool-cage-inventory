@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/automation/audit";
 import { prisma } from "@/lib/prisma";
 import {
@@ -13,6 +14,15 @@ import {
 } from "@/lib/scan";
 
 export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session || session.role !== "site" || session.siteId == null) {
+    return NextResponse.json(
+      { success: false, error: "Site login required." },
+      { status: 401 },
+    );
+  }
+  const siteId = session.siteId;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -31,7 +41,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const employee = await findEmployeeByBadge(parsed.badgeInput);
+  const employee = await findEmployeeByBadge(parsed.badgeInput, siteId);
   if (!employee) {
     return NextResponse.json(
       { success: false, error: "Badge not found" },
@@ -39,7 +49,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const tool = await findToolByCode(parsed.toolInput);
+  const tool = await findToolByCode(parsed.toolInput, siteId);
   if (!tool) {
     return NextResponse.json(
       { success: false, error: "Tool not found" },
@@ -65,6 +75,7 @@ export async function POST(request: Request) {
       const transaction_id = await nextToolTxnCode(tx);
       const transaction = await tx.toolTransaction.create({
         data: {
+          site_id: siteId,
           transaction_id,
           occurred_at: now,
           badge_id: employee.badge_id,
@@ -78,7 +89,7 @@ export async function POST(request: Request) {
       });
 
       const updatedTool = await tx.tool.update({
-        where: { tool_id: tool.tool_id },
+        where: { id: tool.id },
         data: {
           status: TOOL_STATUS.AVAILABLE,
           // Keep last_checked_out_by for history (Excel behavior).

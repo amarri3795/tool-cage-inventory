@@ -1,9 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { AccessControlSection } from "@/components/admin/AccessControlSection";
 import { AdminActionsSection } from "@/components/admin/AdminActionsSection";
-import { AdminGate } from "@/components/admin/AdminGate";
 import { AlertsSection } from "@/components/admin/AlertsSection";
 import {
   adminFetch,
@@ -25,22 +25,7 @@ const NAV = [
 ] as const;
 
 export function AdminControlCenter() {
-  return (
-    <AdminGate>
-      {(badgeId, signOut) => (
-        <AdminConsole badgeId={badgeId} signOut={signOut} />
-      )}
-    </AdminGate>
-  );
-}
-
-function AdminConsole({
-  badgeId,
-  signOut,
-}: {
-  badgeId: string;
-  signOut: () => void;
-}) {
+  const router = useRouter();
   const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [health, setHealth] = useState<SystemHealthReport | null>(null);
   const [busy, setBusy] = useState(false);
@@ -53,15 +38,21 @@ function AdminConsole({
     window.setTimeout(() => setToast(null), 3500);
   };
 
+  async function signOut() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/");
+    router.refresh();
+  }
+
   const loadSettings = useCallback(async () => {
     setBusy(true);
     setLoadError(null);
     try {
-      const res = await adminFetch(badgeId, "/api/admin/settings");
+      const res = await adminFetch("/api/admin/settings");
       const data = (await res.json()) as SettingsResponse;
       if (!res.ok || !data.success) {
         if (res.status === 401 || res.status === 403) {
-          signOut();
+          await signOut();
           return;
         }
         setLoadError(data.error ?? "Failed to load settings");
@@ -73,12 +64,12 @@ function AdminConsole({
     } finally {
       setBusy(false);
     }
-  }, [badgeId, signOut]);
+  }, []);
 
   const loadHealth = useCallback(async () => {
     setBusy(true);
     try {
-      const res = await adminFetch(badgeId, "/api/admin/health");
+      const res = await adminFetch("/api/admin/health");
       const data = (await res.json()) as HealthResponse;
       if (!res.ok || !data.success) {
         showToast(data.error ?? "Health check failed");
@@ -90,7 +81,7 @@ function AdminConsole({
     } finally {
       setBusy(false);
     }
-  }, [badgeId]);
+  }, []);
 
   useEffect(() => {
     void loadSettings();
@@ -101,7 +92,7 @@ function AdminConsole({
     if (!settings) return;
     setBusy(true);
     try {
-      const res = await adminFetch(badgeId, "/api/admin/settings", {
+      const res = await adminFetch("/api/admin/settings", {
         method: "PUT",
         body: JSON.stringify(settings),
       });
@@ -125,7 +116,7 @@ function AdminConsole({
   ): Promise<ActionResponse | null> {
     setBusy(true);
     try {
-      const res = await adminFetch(badgeId, path, { method });
+      const res = await adminFetch(path, { method });
       if (path.includes("export-audit-log") && method === "GET") {
         if (!res.ok) {
           const data = (await res.json()) as ActionResponse;
@@ -188,7 +179,7 @@ function AdminConsole({
   return (
     <div className="relative lg:grid lg:grid-cols-[220px_1fr] lg:gap-8">
       {toast ? (
-        <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-lg bg-[var(--foreground)] px-4 py-2.5 text-sm text-white shadow-lg">
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm shadow-lg">
           {toast}
         </div>
       ) : null}
@@ -199,7 +190,7 @@ function AdminConsole({
             Control Center
           </p>
           <p className="mt-1 truncate text-sm text-[var(--muted)]">
-            Badge {badgeId}
+            Master admin
           </p>
           <nav className="mt-4 space-y-1">
             {NAV.map((item) => (
@@ -214,10 +205,10 @@ function AdminConsole({
           </nav>
           <button
             type="button"
-            onClick={signOut}
+            onClick={() => void signOut()}
             className="mt-4 w-full rounded-md border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--muted)] hover:bg-[var(--background)]"
           >
-            Sign out badge
+            Sign out
           </button>
         </div>
       </aside>
@@ -225,7 +216,7 @@ function AdminConsole({
       <div className="space-y-12 pb-16">
         <header>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Admin Control Center
+            Admin Dashboard
           </h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
             Configure cage settings, access, alerts, and run operational checks —

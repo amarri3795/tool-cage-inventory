@@ -102,7 +102,7 @@ export async function runLowStockAlerts(options?: {
         (material.low_stock_email_sent || material.low_stock_email_date)
       ) {
         await prisma.material.update({
-          where: { material_id: material.material_id },
+          where: { id: material.id },
           data: {
             status: MATERIAL_STATUS.OK,
             low_stock_email_sent: false,
@@ -136,7 +136,7 @@ export async function runLowStockAlerts(options?: {
     // Ensure status reflects low stock.
     if (material.status.trim().toLowerCase() !== "low stock") {
       await prisma.material.update({
-        where: { material_id: material.material_id },
+        where: { id: material.id },
         data: { status: MATERIAL_STATUS.LOW_STOCK },
       });
     }
@@ -183,7 +183,7 @@ export async function runLowStockAlerts(options?: {
 
     await prisma.$transaction(async (tx) => {
       await tx.material.update({
-        where: { material_id: material.material_id },
+        where: { id: material.id },
         data: {
           status: MATERIAL_STATUS.LOW_STOCK,
           low_stock_email_sent: true,

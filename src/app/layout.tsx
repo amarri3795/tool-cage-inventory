@@ -18,7 +18,7 @@ export default function RootLayout({
       <body className="min-h-screen antialiased">
         <header className="border-b border-[var(--border)] bg-[var(--card)]">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-            <Link href="/dashboard" className="text-lg font-semibold tracking-tight">
+            <Link href="/" className="text-lg font-semibold tracking-tight">
               Tool Cage Inventory
             </Link>
             <AppNav />

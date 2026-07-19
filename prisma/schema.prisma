@@ -7,10 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Employee Directory (Badge ID, Raw Emp Data, Employee Name, Job Title)
+/// Plant / facility (multi-site)
+model Site {
+  id                    Int                   @id @default(autoincrement())
+  name                  String                @unique
+  password_hash         String
+  contact_email         String
+  created_at            DateTime              @default(now())
+  updated_at            DateTime              @updatedAt
+  employees             Employee[]
+  tools                 Tool[]
+  materials             Material[]
+  tool_transactions     ToolTransaction[]
+  material_transactions MaterialTransaction[]
+  audit_logs            AuditLog[]
+  settings              Setting[]
+  update_logs           UpdateLog[]
+
+  @@map("sites")
+}
+
+/// Employee Directory
 model Employee {
   id                    Int                   @id @default(autoincrement())
-  badge_id              String                @unique
+  site_id               Int
+  site                  Site                  @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  badge_id              String
   raw_badge_data        String
   name                  String
   job_title             String?
@@ -19,13 +41,17 @@ model Employee {
   tool_transactions     ToolTransaction[]
   material_transactions MaterialTransaction[]
 
+  @@unique([site_id, badge_id])
+  @@index([site_id])
   @@map("employees")
 }
 
-/// Tool Inventory (Tool ID … Overdue Since)
+/// Tool Inventory
 model Tool {
   id                   Int               @id @default(autoincrement())
-  tool_id              String            @unique
+  site_id              Int
+  site                 Site              @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  tool_id              String
   name                 String
   category             String?
   location             String?
@@ -40,26 +66,32 @@ model Tool {
   updated_at           DateTime          @updatedAt
   tool_transactions    ToolTransaction[]
 
+  @@unique([site_id, tool_id])
+  @@index([site_id])
   @@map("tools")
 }
 
-/// Tool Transactions / TransactionLog
+/// Tool Transactions
 model ToolTransaction {
   id             Int      @id @default(autoincrement())
-  transaction_id String   @unique
+  site_id        Int
+  site           Site     @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  transaction_id String
   occurred_at    DateTime
   badge_id       String
   employee_id    Int?
   employee       Employee? @relation(fields: [employee_id], references: [id])
   employee_name  String?
   tool_id        String
-  tool           Tool     @relation(fields: [tool_id], references: [tool_id])
+  tool           Tool     @relation(fields: [site_id, tool_id], references: [site_id, tool_id])
   tool_name      String?
   action         String
   purpose        String?
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
+  @@unique([site_id, transaction_id])
+  @@index([site_id])
   @@index([badge_id])
   @@index([tool_id])
   @@map("tool_transactions")
@@ -68,7 +100,9 @@ model ToolTransaction {
 /// Material Inventory
 model Material {
   id                    Int                   @id @default(autoincrement())
-  material_id           String                @unique
+  site_id               Int
+  site                  Site                  @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  material_id           String
   name                  String
   category              String?
   unit                  String?
@@ -85,20 +119,24 @@ model Material {
   updated_at            DateTime              @updatedAt
   material_transactions MaterialTransaction[]
 
+  @@unique([site_id, material_id])
+  @@index([site_id])
   @@map("materials")
 }
 
 /// Material Transactions
 model MaterialTransaction {
   id             Int       @id @default(autoincrement())
-  transaction_id String    @unique
+  site_id        Int
+  site           Site      @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  transaction_id String
   occurred_at    DateTime
   badge_id       String
   employee_id    Int?
   employee       Employee? @relation(fields: [employee_id], references: [id])
   employee_name  String?
   material_id    String
-  material       Material  @relation(fields: [material_id], references: [material_id])
+  material       Material  @relation(fields: [site_id, material_id], references: [site_id, material_id])
   material_name  String?
   qty_taken      Float
   unit           String?
@@ -106,14 +144,18 @@ model MaterialTransaction {
   created_at     DateTime  @default(now())
   updated_at     DateTime  @updatedAt
 
+  @@unique([site_id, transaction_id])
+  @@index([site_id])
   @@index([badge_id])
   @@index([material_id])
   @@map("material_transactions")
 }
 
-/// Security & Audit manual change log
+/// Security & Audit log
 model AuditLog {
   id          Int      @id @default(autoincrement())
+  site_id     Int?
+  site        Site?    @relation(fields: [site_id], references: [id], onDelete: SetNull)
   audit_id    String   @unique
   occurred_at DateTime
   changed_by  String?
@@ -123,24 +165,31 @@ model AuditLog {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
+  @@index([site_id])
   @@map("audit_logs")
 }
 
-/// Admin Center / Overdue / Access / Alert settings (key-value)
+/// Settings (null site_id = global/master)
 model Setting {
   id         Int      @id @default(autoincrement())
-  key        String   @unique
+  site_id    Int?
+  site       Site?    @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  key        String
   value      String
   notes      String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  @@unique([site_id, key])
+  @@index([site_id])
   @@map("settings")
 }
 
 /// Updates sheet change log
 model UpdateLog {
   id            Int      @id @default(autoincrement())
+  site_id       Int?
+  site          Site?    @relation(fields: [site_id], references: [id], onDelete: Cascade)
   update_number Int
   event_date    DateTime
   description   String
@@ -148,5 +197,6 @@ model UpdateLog {
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
+  @@index([site_id])
   @@map("update_logs")
 }

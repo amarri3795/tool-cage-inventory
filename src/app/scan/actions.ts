@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import {
   findEmployeeByBadge,
   findItemByPrefixedId,
+  findMaterialByCode,
+  findToolByCode,
   isToolAvailable,
   isToolCheckedOut,
   isToolMissing,
@@ -16,6 +18,7 @@ import {
   type EmployeeSummary,
   type ItemSummary,
 } from "@/lib/scan";
+import { requireSiteSession } from "@/lib/site-context";
 
 export type LookupEmployeeResult =
   | { ok: true; employee: EmployeeSummary }
@@ -32,12 +35,13 @@ export type SubmitScanResult =
 export async function lookupEmployeeAction(
   badgeInput: string,
 ): Promise<LookupEmployeeResult> {
+  const { siteId } = await requireSiteSession();
   const trimmed = badgeInput.trim();
   if (!trimmed) {
     return { ok: false, error: "Enter a badge ID." };
   }
 
-  const employee = await findEmployeeByBadge(trimmed);
+  const employee = await findEmployeeByBadge(trimmed, siteId);
   if (!employee) {
     return {
       ok: false,
@@ -51,6 +55,7 @@ export async function lookupEmployeeAction(
 export async function lookupItemAction(
   itemInput: string,
 ): Promise<LookupItemResult> {
+  const { siteId } = await requireSiteSession();
   const trimmed = itemInput.trim();
   if (!trimmed) {
     return { ok: false, error: "Enter a tool or material ID." };
@@ -64,7 +69,7 @@ export async function lookupItemAction(
     };
   }
 
-  const item = await findItemByPrefixedId(trimmed);
+  const item = await findItemByPrefixedId(trimmed, siteId);
   if (!item) {
     const kind = upper.startsWith("TL-") ? "tool" : "material";
     return {
@@ -82,6 +87,7 @@ export async function submitScanAction(input: {
   action: string;
   qtyPurpose: string;
 }): Promise<SubmitScanResult> {
+  const { siteId } = await requireSiteSession();
   const badgeInput = input.badgeInput.trim();
   const itemInput = input.itemInput.trim();
   const action = input.action.trim();
@@ -91,12 +97,12 @@ export async function submitScanAction(input: {
   if (!itemInput) return { ok: false, error: "Tool or Material ID is required." };
   if (!action) return { ok: false, error: "Select an action." };
 
-  const employee = await findEmployeeByBadge(badgeInput);
+  const employee = await findEmployeeByBadge(badgeInput, siteId);
   if (!employee) {
     return { ok: false, error: `No employee found for badge "${badgeInput}".` };
   }
 
-  const item = await findItemByPrefixedId(itemInput);
+  const item = await findItemByPrefixedId(itemInput, siteId);
   if (!item) {
     return {
       ok: false,
@@ -106,6 +112,7 @@ export async function submitScanAction(input: {
 
   if (item.kind === "tool") {
     return submitToolScan({
+      siteId,
       employee,
       toolCode: item.tool_id,
       action,
@@ -114,6 +121,7 @@ export async function submitScanAction(input: {
   }
 
   return submitMaterialScan({
+    siteId,
     employee,
     materialCode: item.material_id,
     action,
@@ -122,18 +130,19 @@ export async function submitScanAction(input: {
 }
 
 async function submitToolScan(args: {
+  siteId: number;
   employee: EmployeeSummary;
   toolCode: string;
   action: string;
   purpose: string;
 }): Promise<SubmitScanResult> {
-  const { employee, toolCode, action, purpose } = args;
+  const { siteId, employee, toolCode, action, purpose } = args;
   const now = new Date();
 
   try {
     if (action === TOOL_ACTIONS.CHECK_OUT) {
       await prisma.$transaction(async (tx) => {
-        const tool = await tx.tool.findUnique({ where: { tool_id: toolCode } });
+        const tool = await findToolByCode(toolCode, siteId, tx);
         if (!tool) throw new Error("Tool not found.");
         if (isToolMissing(tool.status)) {
           throw new Error("Cannot check out a missing tool.");
@@ -150,6 +159,7 @@ async function submitToolScan(args: {
         const transaction_id = await nextToolTxnCode(tx);
         await tx.toolTransaction.create({
           data: {
+            site_id: siteId,
             transaction_id,
             occurred_at: now,
             tool_id: tool.tool_id,
@@ -163,7 +173,7 @@ async function submitToolScan(args: {
         });
 
         await tx.tool.update({
-          where: { tool_id: tool.tool_id },
+          where: { id: tool.id },
           data: {
             status: TOOL_STATUS.CHECKED_OUT,
             last_checked_out_by: employee.name,
@@ -192,7 +202,7 @@ async function submitToolScan(args: {
 
     if (action === TOOL_ACTIONS.CHECK_IN) {
       await prisma.$transaction(async (tx) => {
-        const tool = await tx.tool.findUnique({ where: { tool_id: toolCode } });
+        const tool = await findToolByCode(toolCode, siteId, tx);
         if (!tool) throw new Error("Tool not found.");
         if (isToolAvailable(tool.status)) {
           throw new Error("Tool is already available (cannot check in).");
@@ -206,6 +216,7 @@ async function submitToolScan(args: {
         const transaction_id = await nextToolTxnCode(tx);
         await tx.toolTransaction.create({
           data: {
+            site_id: siteId,
             transaction_id,
             occurred_at: now,
             tool_id: tool.tool_id,
@@ -219,7 +230,7 @@ async function submitToolScan(args: {
         });
 
         await tx.tool.update({
-          where: { tool_id: tool.tool_id },
+          where: { id: tool.id },
           data: {
             status: TOOL_STATUS.AVAILABLE,
             last_checked_out_by: null,
@@ -259,12 +270,13 @@ async function submitToolScan(args: {
 }
 
 async function submitMaterialScan(args: {
+  siteId: number;
   employee: EmployeeSummary;
   materialCode: string;
   action: string;
   qtyPurpose: string;
 }): Promise<SubmitScanResult> {
-  const { employee, materialCode, action, qtyPurpose } = args;
+  const { siteId, employee, materialCode, action, qtyPurpose } = args;
   const qty = Number(qtyPurpose);
   const now = new Date();
 
@@ -278,9 +290,7 @@ async function submitMaterialScan(args: {
   try {
     if (action === MATERIAL_ACTIONS.ISSUE) {
       await prisma.$transaction(async (tx) => {
-        const material = await tx.material.findUnique({
-          where: { material_id: materialCode },
-        });
+        const material = await findMaterialByCode(materialCode, siteId, tx);
         if (!material) throw new Error("Material not found.");
         if (material.current_qty < qty) {
           throw new Error(
@@ -293,6 +303,7 @@ async function submitMaterialScan(args: {
 
         await tx.materialTransaction.create({
           data: {
+            site_id: siteId,
             transaction_id,
             occurred_at: now,
             material_id: material.material_id,
@@ -307,7 +318,7 @@ async function submitMaterialScan(args: {
         });
 
         await tx.material.update({
-          where: { material_id: material.material_id },
+          where: { id: material.id },
           data: {
             current_qty: remaining,
             last_taken_by: employee.name,
@@ -333,9 +344,7 @@ async function submitMaterialScan(args: {
 
     if (action === MATERIAL_ACTIONS.RECEIVE) {
       await prisma.$transaction(async (tx) => {
-        const material = await tx.material.findUnique({
-          where: { material_id: materialCode },
-        });
+        const material = await findMaterialByCode(materialCode, siteId, tx);
         if (!material) throw new Error("Material not found.");
 
         const remaining = material.current_qty + qty;
@@ -343,6 +352,7 @@ async function submitMaterialScan(args: {
 
         await tx.materialTransaction.create({
           data: {
+            site_id: siteId,
             transaction_id,
             occurred_at: now,
             material_id: material.material_id,
@@ -357,7 +367,7 @@ async function submitMaterialScan(args: {
         });
 
         await tx.material.update({
-          where: { material_id: material.material_id },
+          where: { id: material.id },
           data: {
             current_qty: remaining,
             status: remaining <= material.min_qty ? "Low Stock" : "OK",

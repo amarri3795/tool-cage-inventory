@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireSiteSession } from "@/lib/site-context";
 
 function str(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -29,6 +30,7 @@ export async function createMaterial(
   _prev: MaterialActionState,
   formData: FormData,
 ): Promise<MaterialActionState> {
+  const { siteId } = await requireSiteSession();
   const material_id = str(formData, "material_id");
   const name = str(formData, "name");
 
@@ -36,7 +38,9 @@ export async function createMaterial(
     return { error: "Material ID and name are required." };
   }
 
-  const existing = await prisma.material.findUnique({ where: { material_id } });
+  const existing = await prisma.material.findUnique({
+    where: { site_id_material_id: { site_id: siteId, material_id } },
+  });
   if (existing) {
     return { error: `Material ID "${material_id}" already exists.` };
   }
@@ -44,11 +48,11 @@ export async function createMaterial(
   const current_qty = parseNumber(formData, "current_qty", 0);
   const min_qty = parseNumber(formData, "min_qty", 0);
   const status =
-    str(formData, "status") ||
-    (current_qty <= min_qty ? "Low" : "OK");
+    str(formData, "status") || (current_qty <= min_qty ? "Low" : "OK");
 
   await prisma.material.create({
     data: {
+      site_id: siteId,
       material_id,
       name,
       category: optional(formData, "category"),
@@ -71,6 +75,7 @@ export async function updateMaterial(
   _prev: MaterialActionState,
   formData: FormData,
 ): Promise<MaterialActionState> {
+  const { siteId } = await requireSiteSession();
   const material_id = str(formData, "material_id");
   const name = str(formData, "name");
 
@@ -78,8 +83,15 @@ export async function updateMaterial(
     return { error: "Material ID and name are required." };
   }
 
+  const owned = await prisma.material.findFirst({
+    where: { id, site_id: siteId },
+  });
+  if (!owned) {
+    return { error: "Material not found." };
+  }
+
   const conflict = await prisma.material.findFirst({
-    where: { material_id, NOT: { id } },
+    where: { site_id: siteId, material_id, NOT: { id } },
   });
   if (conflict) {
     return { error: `Material ID "${material_id}" already exists.` };
@@ -88,8 +100,7 @@ export async function updateMaterial(
   const current_qty = parseNumber(formData, "current_qty", 0);
   const min_qty = parseNumber(formData, "min_qty", 0);
   const status =
-    str(formData, "status") ||
-    (current_qty <= min_qty ? "Low" : "OK");
+    str(formData, "status") || (current_qty <= min_qty ? "Low" : "OK");
 
   try {
     await prisma.material.update({

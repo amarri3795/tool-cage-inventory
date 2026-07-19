@@ -1,9 +1,13 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as XLSX from "xlsx";
 
 const prisma = new PrismaClient();
+
+const DEFAULT_SITE_NAME = "BowlingGreenKY";
+const DEFAULT_SITE_EMAIL = "admin@bowlinggreen.local";
 
 const EXCEL_CANDIDATES = [
   path.join(process.env.USERPROFILE ?? "", "Desktop", "Tool Scanning.xlsm"),
@@ -610,8 +614,8 @@ function buildAuditLogs(wb: XLSX.WorkBook | null): AuditSeedRow[] {
   return audits.length ? audits : FALLBACK_AUDIT_LOGS;
 }
 
-async function clearAll() {
-  // FK-safe order
+async function clearInventory() {
+  // FK-safe order (keep sites; password refreshed via upsert)
   await prisma.toolTransaction.deleteMany();
   await prisma.materialTransaction.deleteMany();
   await prisma.auditLog.deleteMany();
@@ -620,6 +624,25 @@ async function clearAll() {
   await prisma.tool.deleteMany();
   await prisma.material.deleteMany();
   await prisma.employee.deleteMany();
+}
+
+async function ensureDefaultSite() {
+  const plain =
+    process.env.DEFAULT_SITE_PASSWORD?.trim() || "ChangeMeSite1!";
+  const password_hash = await bcrypt.hash(plain, 12);
+
+  return prisma.site.upsert({
+    where: { name: DEFAULT_SITE_NAME },
+    create: {
+      name: DEFAULT_SITE_NAME,
+      password_hash,
+      contact_email: DEFAULT_SITE_EMAIL,
+    },
+    update: {
+      password_hash,
+      contact_email: DEFAULT_SITE_EMAIL,
+    },
+  });
 }
 
 async function main() {
@@ -644,15 +667,26 @@ async function main() {
     throw new Error(`Expected 41 materials, got ${materials.length}`);
   }
 
-  await clearAll();
+  const site = await ensureDefaultSite();
+  const siteId = site.id;
+  console.log(`Using site ${site.name} (id=${siteId})`);
 
-  await prisma.employee.createMany({ data: employees });
-  await prisma.tool.createMany({ data: tools });
-  await prisma.material.createMany({ data: materials });
+  await clearInventory();
+
+  await prisma.employee.createMany({
+    data: employees.map((e) => ({ ...e, site_id: siteId })),
+  });
+  await prisma.tool.createMany({
+    data: tools.map((t) => ({ ...t, site_id: siteId })),
+  });
+  await prisma.material.createMany({
+    data: materials.map((m) => ({ ...m, site_id: siteId })),
+  });
 
   const employeeByBadge = Object.fromEntries(
     (
       await prisma.employee.findMany({
+        where: { site_id: siteId },
         select: { id: true, badge_id: true },
       })
     ).map((e) => [e.badge_id, e.id]),
@@ -661,6 +695,7 @@ async function main() {
   if (toolTx.length) {
     await prisma.toolTransaction.createMany({
       data: toolTx.map((t) => ({
+        site_id: siteId,
         transaction_id: t.transaction_id,
         occurred_at: t.occurred_at,
         badge_id: t.badge_id,
@@ -677,6 +712,7 @@ async function main() {
   if (materialTx.length) {
     await prisma.materialTransaction.createMany({
       data: materialTx.map((t) => ({
+        site_id: siteId,
         transaction_id: t.transaction_id,
         occurred_at: t.occurred_at,
         badge_id: t.badge_id,
@@ -691,25 +727,36 @@ async function main() {
     });
   }
 
-  await prisma.setting.createMany({ data: DEFAULT_SETTINGS });
+  await prisma.setting.createMany({
+    data: DEFAULT_SETTINGS.map((s) => ({ ...s, site_id: siteId })),
+  });
 
   if (updates.length) {
-    await prisma.updateLog.createMany({ data: updates });
+    await prisma.updateLog.createMany({
+      data: updates.map((u) => ({ ...u, site_id: siteId })),
+    });
   }
 
   if (audits.length) {
-    await prisma.auditLog.createMany({ data: audits });
+    await prisma.auditLog.createMany({
+      data: audits.map((a) => ({ ...a, site_id: siteId })),
+    });
   }
 
   const counts = {
-    employees: await prisma.employee.count(),
-    tools: await prisma.tool.count(),
-    materials: await prisma.material.count(),
-    tool_transactions: await prisma.toolTransaction.count(),
-    material_transactions: await prisma.materialTransaction.count(),
-    settings: await prisma.setting.count(),
-    update_logs: await prisma.updateLog.count(),
-    audit_logs: await prisma.auditLog.count(),
+    site: site.name,
+    employees: await prisma.employee.count({ where: { site_id: siteId } }),
+    tools: await prisma.tool.count({ where: { site_id: siteId } }),
+    materials: await prisma.material.count({ where: { site_id: siteId } }),
+    tool_transactions: await prisma.toolTransaction.count({
+      where: { site_id: siteId },
+    }),
+    material_transactions: await prisma.materialTransaction.count({
+      where: { site_id: siteId },
+    }),
+    settings: await prisma.setting.count({ where: { site_id: siteId } }),
+    update_logs: await prisma.updateLog.count({ where: { site_id: siteId } }),
+    audit_logs: await prisma.auditLog.count({ where: { site_id: siteId } }),
   };
 
   console.log("Seed complete:", counts);

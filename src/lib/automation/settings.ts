@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/automation/audit";
+import { resolveSettingsSiteId } from "@/lib/settings";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -41,7 +42,10 @@ export async function getSettingValue(
   fallback = "",
   db: DbClient = prisma,
 ): Promise<string> {
-  const row = await db.setting.findUnique({ where: { key } });
+  const siteId = await resolveSettingsSiteId();
+  const row = await db.setting.findUnique({
+    where: { site_id_key: { site_id: siteId, key } },
+  });
   if (row) return row.value;
   const def = AUTOMATION_SETTING_DEFAULTS[key];
   return def?.value ?? fallback;
@@ -85,11 +89,19 @@ export async function getAlertEmailRecipient(
 export async function ensureAutomationSettings(
   db: DbClient = prisma,
 ): Promise<void> {
+  const siteId = await resolveSettingsSiteId();
   for (const [key, meta] of Object.entries(AUTOMATION_SETTING_DEFAULTS)) {
-    const existing = await db.setting.findUnique({ where: { key } });
+    const existing = await db.setting.findUnique({
+      where: { site_id_key: { site_id: siteId, key } },
+    });
     if (!existing) {
       await db.setting.create({
-        data: { key, value: meta.value, notes: meta.notes },
+        data: {
+          site_id: siteId,
+          key,
+          value: meta.value,
+          notes: meta.notes,
+        },
       });
     }
   }
@@ -106,10 +118,14 @@ export async function upsertSetting(
   },
 ) {
   const db = options?.db ?? prisma;
-  const previous = await db.setting.findUnique({ where: { key } });
+  const siteId = await resolveSettingsSiteId();
+  const previous = await db.setting.findUnique({
+    where: { site_id_key: { site_id: siteId, key } },
+  });
   const row = await db.setting.upsert({
-    where: { key },
+    where: { site_id_key: { site_id: siteId, key } },
     create: {
+      site_id: siteId,
       key,
       value,
       notes: options?.notes ?? AUTOMATION_SETTING_DEFAULTS[key]?.notes ?? null,

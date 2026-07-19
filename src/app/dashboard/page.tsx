@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getSiteScope } from "@/lib/site-context";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,8 @@ function EmptyRow({ colSpan, message }: { colSpan: number; message: string }) {
 }
 
 export default async function DashboardPage() {
+  const { where, session } = await getSiteScope();
+
   const [
     totalTools,
     availableTools,
@@ -58,19 +61,26 @@ export default async function DashboardPage() {
     missingRows,
     materials,
   ] = await Promise.all([
-    prisma.tool.count(),
-    prisma.tool.count({ where: { status: { in: AVAILABLE_STATUSES } } }),
-    prisma.tool.count({ where: { status: { in: CHECKED_OUT_STATUSES } } }),
-    prisma.tool.count({ where: { status: { in: MISSING_STATUSES } } }),
+    prisma.tool.count({ where }),
+    prisma.tool.count({
+      where: { ...where, status: { in: AVAILABLE_STATUSES } },
+    }),
+    prisma.tool.count({
+      where: { ...where, status: { in: CHECKED_OUT_STATUSES } },
+    }),
+    prisma.tool.count({
+      where: { ...where, status: { in: MISSING_STATUSES } },
+    }),
     prisma.tool.findMany({
-      where: { status: { in: CHECKED_OUT_STATUSES } },
+      where: { ...where, status: { in: CHECKED_OUT_STATUSES } },
       orderBy: [{ checkout_time: "desc" }, { tool_id: "asc" }],
     }),
     prisma.tool.findMany({
-      where: { status: { in: MISSING_STATUSES } },
+      where: { ...where, status: { in: MISSING_STATUSES } },
       orderBy: { tool_id: "asc" },
     }),
     prisma.material.findMany({
+      where,
       orderBy: { material_id: "asc" },
     }),
   ]);
@@ -90,7 +100,9 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Tool Cage Dashboard</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Live inventory summary for tools and materials.
+          {session?.siteName
+            ? `Live inventory summary for ${session.siteName}.`
+            : "Live inventory summary for tools and materials."}
         </p>
       </div>
 

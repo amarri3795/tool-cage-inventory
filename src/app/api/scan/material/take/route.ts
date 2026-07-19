@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/automation/audit";
 import { prisma } from "@/lib/prisma";
 import {
@@ -12,6 +13,15 @@ import {
 } from "@/lib/scan";
 
 export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session || session.role !== "site" || session.siteId == null) {
+    return NextResponse.json(
+      { success: false, error: "Site login required." },
+      { status: 401 },
+    );
+  }
+  const siteId = session.siteId;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -30,7 +40,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const employee = await findEmployeeByBadge(parsed.badgeInput);
+  const employee = await findEmployeeByBadge(parsed.badgeInput, siteId);
   if (!employee) {
     return NextResponse.json(
       { success: false, error: "Badge not found" },
@@ -38,7 +48,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const material = await findMaterialByCode(parsed.materialInput);
+  const material = await findMaterialByCode(parsed.materialInput, siteId);
   if (!material) {
     return NextResponse.json(
       { success: false, error: "Material not found" },
@@ -63,7 +73,7 @@ export async function POST(request: Request) {
   try {
     const result = await prisma.$transaction(async (tx) => {
       const locked = await tx.material.findUnique({
-        where: { material_id: material.material_id },
+        where: { id: material.id },
       });
       if (!locked) {
         throw new Error("Material not found");
@@ -86,6 +96,7 @@ export async function POST(request: Request) {
       const transaction_id = await nextMaterialTxnCode(tx);
       const transaction = await tx.materialTransaction.create({
         data: {
+          site_id: siteId,
           transaction_id,
           occurred_at: now,
           badge_id: employee.badge_id,
@@ -100,7 +111,7 @@ export async function POST(request: Request) {
       });
 
       const updatedMaterial = await tx.material.update({
-        where: { material_id: locked.material_id },
+        where: { id: locked.id },
         data: {
           current_qty: remaining,
           last_taken_by: employee.name,

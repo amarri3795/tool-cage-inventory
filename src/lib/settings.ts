@@ -70,7 +70,7 @@ export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   [SETTING_KEYS.allowedActions]: '["Checked Out","Checked In"]',
   [SETTING_KEYS.allowedConditions]: '["Good","Fair","Needs Repair"]',
   [SETTING_KEYS.requirePurpose]: "true",
-  [SETTING_KEYS.adminBadgeIds]: '["6279"]',
+  [SETTING_KEYS.adminBadgeIds]: "[]",
   [SETTING_KEYS.materialManagerBadgeIds]: '["1022"]',
   [SETTING_KEYS.rolePermissions]: JSON.stringify(DEFAULT_ROLE_PERMISSIONS),
   [SETTING_KEYS.lowStockAlertsEnabled]: "true",
@@ -159,8 +159,21 @@ export function parseRolePermissions(raw: string): Record<string, string[]> {
   } as unknown as Record<string, string[]>;
 }
 
+export async function resolveSettingsSiteId(): Promise<number> {
+  const named = await prisma.site.findUnique({
+    where: { name: "BowlingGreenKY" },
+  });
+  if (named) return named.id;
+  const first = await prisma.site.findFirst({ orderBy: { id: "asc" } });
+  if (!first) {
+    throw new Error("No sites exist. Create a site before managing settings.");
+  }
+  return first.id;
+}
+
 export async function getSettingMap(): Promise<Map<string, string>> {
-  const rows = await prisma.setting.findMany();
+  const siteId = await resolveSettingsSiteId();
+  const rows = await prisma.setting.findMany({ where: { site_id: siteId } });
   const map = new Map(rows.map((r) => [r.key, r.value]));
   for (const [key, value] of Object.entries(SETTING_DEFAULTS)) {
     if (!map.has(key)) map.set(key, value);
@@ -169,20 +182,23 @@ export async function getSettingMap(): Promise<Map<string, string>> {
 }
 
 export async function ensureAdminSettingDefaults(): Promise<void> {
+  const siteId = await resolveSettingsSiteId();
   for (const [key, value] of Object.entries(SETTING_DEFAULTS) as [
     SettingKey,
     string,
   ][]) {
     await prisma.setting.upsert({
-      where: { key },
+      where: { site_id_key: { site_id: siteId, key } },
       create: {
+        site_id: siteId,
         key,
         value,
-        notes: key === SETTING_KEYS.allowedToolStatuses
-          ? "Allowed tool inventory statuses"
-          : key === SETTING_KEYS.rolePermissions
-            ? "JSON map of role → permission list"
-            : null,
+        notes:
+          key === SETTING_KEYS.allowedToolStatuses
+            ? "Allowed tool inventory statuses"
+            : key === SETTING_KEYS.rolePermissions
+              ? "JSON map of role → permission list"
+              : null,
       },
       update: {},
     });
@@ -373,13 +389,15 @@ export async function updateAdminSettings(
     });
   }
 
+  const siteId = await resolveSettingsSiteId();
+
   for (const write of writes) {
     const previous = await prisma.setting.findUnique({
-      where: { key: write.key },
+      where: { site_id_key: { site_id: siteId, key: write.key } },
     });
     await prisma.setting.upsert({
-      where: { key: write.key },
-      create: { key: write.key, value: write.value },
+      where: { site_id_key: { site_id: siteId, key: write.key } },
+      create: { site_id: siteId, key: write.key, value: write.value },
       update: { value: write.value },
     });
 

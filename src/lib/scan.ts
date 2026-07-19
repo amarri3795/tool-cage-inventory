@@ -29,16 +29,17 @@ export function normalizeBadgeInput(input: string): string {
   return input.trim();
 }
 
-/** Resolve employee by badge_id, or exact raw_badge_data match. */
+/** Resolve employee by badge_id, or exact raw_badge_data match (within site). */
 export async function findEmployeeByBadge(
   badgeInput: string,
+  siteId: number,
   db: DbClient = prisma,
 ): Promise<EmployeeSummary | null> {
   const raw = normalizeBadgeInput(badgeInput);
   if (!raw) return null;
 
   const byBadgeId = await db.employee.findUnique({
-    where: { badge_id: raw },
+    where: { site_id_badge_id: { site_id: siteId, badge_id: raw } },
   });
   if (byBadgeId) return toEmployeeSummary(byBadgeId);
 
@@ -46,13 +47,15 @@ export async function findEmployeeByBadge(
   const percentMatch = raw.match(/%(\d+)\s*$/);
   if (percentMatch) {
     const byExtracted = await db.employee.findUnique({
-      where: { badge_id: percentMatch[1] },
+      where: {
+        site_id_badge_id: { site_id: siteId, badge_id: percentMatch[1] },
+      },
     });
     if (byExtracted) return toEmployeeSummary(byExtracted);
   }
 
   const byRaw = await db.employee.findFirst({
-    where: { raw_badge_data: raw },
+    where: { site_id: siteId, raw_badge_data: raw },
   });
   return byRaw ? toEmployeeSummary(byRaw) : null;
 }
@@ -99,17 +102,20 @@ export function toolIdCandidates(input: string): string[] {
 
 export async function findToolByCode(
   toolInput: string,
+  siteId: number,
   db: DbClient = prisma,
 ) {
   const candidates = toolIdCandidates(toolInput);
   if (candidates.length === 0) return null;
 
   for (const code of candidates) {
-    const tool = await db.tool.findUnique({ where: { tool_id: code } });
+    const tool = await db.tool.findUnique({
+      where: { site_id_tool_id: { site_id: siteId, tool_id: code } },
+    });
     if (tool) return tool;
   }
 
-  const tools = await db.tool.findMany();
+  const tools = await db.tool.findMany({ where: { site_id: siteId } });
   const upperCandidates = new Set(candidates.map((c) => c.toUpperCase()));
   return tools.find((t) => upperCandidates.has(t.tool_id.toUpperCase())) ?? null;
 }
@@ -151,6 +157,7 @@ export function materialIdCandidates(input: string): string[] {
 
 export async function findMaterialByCode(
   materialInput: string,
+  siteId: number,
   db: DbClient = prisma,
 ) {
   const candidates = materialIdCandidates(materialInput);
@@ -158,12 +165,12 @@ export async function findMaterialByCode(
 
   for (const code of candidates) {
     const material = await db.material.findUnique({
-      where: { material_id: code },
+      where: { site_id_material_id: { site_id: siteId, material_id: code } },
     });
     if (material) return material;
   }
 
-  const materials = await db.material.findMany();
+  const materials = await db.material.findMany({ where: { site_id: siteId } });
   const upperCandidates = new Set(candidates.map((c) => c.toUpperCase()));
   return (
     materials.find((m) => upperCandidates.has(m.material_id.toUpperCase())) ??
@@ -173,16 +180,17 @@ export async function findMaterialByCode(
 
 export async function findItemByPrefixedId(
   itemInput: string,
+  siteId: number,
 ): Promise<ItemSummary | null> {
   const { kind, code } = parseItemId(itemInput);
   if (!kind || !code) return null;
 
   if (kind === "tool") {
-    const tool = await findToolByCode(itemInput);
+    const tool = await findToolByCode(itemInput, siteId);
     return tool ? toToolSummary(tool) : null;
   }
 
-  const material = await findMaterialByCode(itemInput);
+  const material = await findMaterialByCode(itemInput, siteId);
   return material ? toMaterialSummary(material) : null;
 }
 
