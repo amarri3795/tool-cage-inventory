@@ -57,11 +57,23 @@ export function AuthCard({ mode }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as {
+
+      let data: {
         success?: boolean;
         error?: string;
         redirectTo?: string;
-      };
+      } = {};
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        setError(
+          res.ok
+            ? "Could not read server response."
+            : `Server error (${res.status}). Check that SESSION_SECRET, MASTER_ADMIN_ID, and MASTER_ADMIN_PASSWORD are set on Vercel, then redeploy.`,
+        );
+        return;
+      }
+
       if (!res.ok || !data.success) {
         setError(data.error ?? "Login failed");
         return;
@@ -69,8 +81,9 @@ export function AuthCard({ mode }: Props) {
       router.replace(data.redirectTo ?? "/dashboard");
       router.refresh();
     } catch {
-      setError("Could not reach the server. Try again.");
-    } finally {
+      setError(
+        "Could not reach the server. Check your connection, or confirm the Vercel deploy is live.",
+      ); finally {
       setBusy(false);
     }
   }
