@@ -4,8 +4,8 @@ import { AppNav } from "@/components/AppNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tool Cage Inventory",
-  description: "Tool cage inventory, checkout, and materials tracking",
+  title: "OpsFlow",
+  description: "OpsFlow inventory, checkout, and materials tracking",
 };
 
 export default function RootLayout({
@@ -18,8 +18,17 @@ export default function RootLayout({
       <body className="min-h-screen antialiased">
         <header className="border-b border-[var(--border)] bg-[var(--card)]">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
-              Tool Cage Inventory
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-lg font-semibold tracking-tight"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/opsflow-logo.png"
+                alt=""
+                className="h-8 w-auto"
+              />
+              <span>OpsFlow</span>
             </Link>
             <AppNav />
           </div>

@@ -128,7 +128,7 @@ export default async function DashboardPage() {
       ) : null}
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Tool Cage Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">OpsFlow — Site Dashboard</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
           {session?.siteName
             ? `Live inventory summary for ${session.siteName}.`

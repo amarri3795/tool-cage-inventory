@@ -1,4 +1,4 @@
-# Automation — Tool Cage Inventory
+# Automation — OpsFlow
 
 Scheduled jobs for overdue tools → Missing and low-stock alerts.
 

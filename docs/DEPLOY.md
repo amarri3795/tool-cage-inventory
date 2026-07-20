@@ -1,4 +1,4 @@
-# Deploy Tool Cage Inventory (Vercel + Neon)
+# Deploy OpsFlow (Vercel + Neon)
 
 This app needs a hosted database. We use **Neon Postgres** (free) and **Vercel** (free `*.vercel.app` URL). You can add a custom domain later in the Vercel dashboard.
 
@@ -33,7 +33,7 @@ If Git is not installed yet: install [Git for Windows](https://git-scm.com/downl
 cd C:\Users\Amarri52\Projects\tool-cage-inventory
 git init
 git add .
-git commit -m "Prepare Tool Cage Inventory for Vercel and Neon"
+git commit -m "Prepare OpsFlow for Vercel and Neon"
 ```
 
 Create a new empty repo on [https://github.com/new](https://github.com/new) named `tool-cage-inventory` (do not add a README), then:

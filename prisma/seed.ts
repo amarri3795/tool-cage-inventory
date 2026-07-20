@@ -651,7 +651,7 @@ async function ensureDefaultSite() {
 }
 
 async function main() {
-  console.log("Seeding Tool Cage Inventory…");
+  console.log("Seeding OpsFlow…");
   const wb = loadWorkbook();
 
   const employees = buildEmployees(wb);

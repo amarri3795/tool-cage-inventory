@@ -1,5 +1,5 @@
 /**
- * CLI runner for Tool Cage Inventory automation.
+ * CLI runner for OpsFlow automation.
  *
  * Usage (from project root):
  *   npx tsx scripts/run-automation.ts

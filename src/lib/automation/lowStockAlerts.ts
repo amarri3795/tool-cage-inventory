@@ -163,7 +163,7 @@ export async function runLowStockAlerts(options?: {
     }
 
     const to = recipient || "unset@local";
-    const subject = `[Tool Cage] Low stock: ${material.name} (${material.material_id})`;
+    const subject = `[OpsFlow] Low stock: ${material.name} (${material.material_id})`;
     const body = [
       `Material ${material.material_id} (${material.name}) is low stock.`,
       `Current qty: ${material.current_qty} ${material.unit ?? ""}`.trim(),

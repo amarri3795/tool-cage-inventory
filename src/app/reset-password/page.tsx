@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="auth-shell">
       <div className="auth-card">
-        <p className="auth-eyebrow">Tool Cage Inventory</p>
+        <p className="auth-eyebrow">OpsFlow</p>
         <h1 className="auth-title">Reset Password</h1>
         <p className="auth-sub">
           Request a site password reset. Your master administrator can also reset

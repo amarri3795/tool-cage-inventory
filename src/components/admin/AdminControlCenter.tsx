@@ -217,7 +217,7 @@ export function AdminControlCenter() {
       <div className="space-y-12 pb-16">
         <header>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Admin Dashboard
+            OpsFlow — Admin Dashboard
           </h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
             Configure cage settings, access, alerts, and run operational checks —
