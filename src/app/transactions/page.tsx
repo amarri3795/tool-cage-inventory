@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { requireSiteSession } from "@/lib/site-context";
+import { requireSiteAdminSession } from "@/lib/site-context";
 import { TransactionsTable, type TransactionRow } from "./transactions-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function TransactionsPage() {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteAdminSession();
   const [toolTxns, materialTxns] = await Promise.all([
     prisma.toolTransaction.findMany({
       where: { site_id: siteId },

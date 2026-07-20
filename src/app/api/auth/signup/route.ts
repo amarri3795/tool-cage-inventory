@@ -85,22 +85,27 @@ export async function POST(request: Request) {
   }
 
   const password_hash = await hashPassword(sitePassword);
+  const adminPlain =
+    process.env.DEFAULT_SITE_ADMIN_PASSWORD?.trim() || sitePassword;
+  const site_admin_password_hash = await hashPassword(adminPlain);
+
   const site = await prisma.site.create({
     data: {
       name,
       password_hash,
+      site_admin_password_hash,
       contact_email: contactEmail,
     },
   });
 
   await setSessionCookie(
-    { role: "site", siteId: site.id, siteName: site.name },
+    { role: "site_member", siteId: site.id, siteName: site.name },
     rememberMe,
   );
 
   return NextResponse.json({
     success: true,
-    role: "site",
+    role: "site_member",
     siteId: site.id,
     siteName: site.name,
     redirectTo: "/dashboard",

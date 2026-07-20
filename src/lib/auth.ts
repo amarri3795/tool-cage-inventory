@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from "crypto";
+import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
@@ -8,7 +8,7 @@ export const SESSION_COOKIE = "tci_session";
 export const REMEMBER_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 export const SESSION_COOKIE_MAX_AGE = 60 * 60 * 12; // 12 hours
 
-export type SessionRole = "master_admin" | "site";
+export type SessionRole = "master_admin" | "site_admin" | "site_member";
 
 export type AppSession = {
   role: SessionRole;
@@ -64,6 +64,15 @@ export async function verifyMasterAdmin(
   return safeEqualString(password, plain);
 }
 
+function normalizeRole(raw: unknown): SessionRole | null {
+  if (raw === "master_admin" || raw === "site_admin" || raw === "site_member") {
+    return raw;
+  }
+  // Legacy sessions
+  if (raw === "site") return "site_member";
+  return null;
+}
+
 export async function createSessionToken(
   session: AppSession,
   maxAgeSeconds: number,
@@ -80,8 +89,8 @@ export async function readSessionToken(
 ): Promise<AppSession | null> {
   try {
     const { payload } = await jwtVerify(token, getSecretKey());
-    const role = payload.role;
-    if (role !== "master_admin" && role !== "site") return null;
+    const role = normalizeRole(payload.role);
+    if (!role) return null;
 
     if (role === "master_admin") {
       const adminId = typeof payload.adminId === "string" ? payload.adminId : "";
@@ -96,7 +105,7 @@ export async function readSessionToken(
     const siteName =
       typeof payload.siteName === "string" ? payload.siteName : "";
     if (!Number.isFinite(siteId) || !siteName) return null;
-    return { role: "site", siteId, siteName };
+    return { role, siteId, siteName };
   } catch {
     return null;
   }
@@ -141,6 +150,23 @@ export async function requireMasterAdmin(): Promise<
   return { ok: true, session };
 }
 
+export async function requireSiteAdminOrMaster(): Promise<
+  | { ok: true; session: AppSession; siteId: number | null }
+  | { ok: false; status: number; error: string }
+> {
+  const session = await getSession();
+  if (!session) {
+    return { ok: false, status: 401, error: "Authentication required." };
+  }
+  if (session.role === "master_admin") {
+    return { ok: true, session, siteId: null };
+  }
+  if (session.role === "site_admin" && session.siteId != null) {
+    return { ok: true, session, siteId: session.siteId };
+  }
+  return { ok: false, status: 403, error: "Site admin access required." };
+}
+
 export async function requireSiteOrAdmin(): Promise<
   | { ok: true; session: AppSession; siteId: number | null }
   | { ok: false; status: number; error: string }
@@ -152,7 +178,10 @@ export async function requireSiteOrAdmin(): Promise<
   if (session.role === "master_admin") {
     return { ok: true, session, siteId: null };
   }
-  if (session.role === "site" && session.siteId != null) {
+  if (
+    (session.role === "site_admin" || session.role === "site_member") &&
+    session.siteId != null
+  ) {
     return { ok: true, session, siteId: session.siteId };
   }
   return { ok: false, status: 401, error: "Authentication required." };
@@ -172,4 +201,21 @@ export async function findSiteByName(name: string) {
 
 export function normalizeSiteName(raw: string): string {
   return raw.trim().replace(/\s+/g, "");
+}
+
+export function hashResetToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+export function generateResetToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+export async function verifySiteAdminPassword(
+  siteId: number,
+  password: string,
+): Promise<boolean> {
+  const site = await prisma.site.findUnique({ where: { id: siteId } });
+  if (!site?.site_admin_password_hash) return false;
+  return verifyPassword(password, site.site_admin_password_hash);
 }

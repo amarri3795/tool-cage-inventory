@@ -75,14 +75,21 @@ export async function POST(request: Request) {
       );
     }
 
+    if (site.is_disabled) {
+      return NextResponse.json(
+        { success: false, error: "This site is temporarily disabled." },
+        { status: 403 },
+      );
+    }
+
     await setSessionCookie(
-      { role: "site", siteId: site.id, siteName: site.name },
+      { role: "site_member", siteId: site.id, siteName: site.name },
       rememberMe,
     );
 
     return NextResponse.json({
       success: true,
-      role: "site",
+      role: "site_member",
       siteId: site.id,
       siteName: site.name,
       redirectTo: "/dashboard",

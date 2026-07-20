@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 /** Public list of site names for the login dropdown (no secrets). */
 export async function GET() {
   const sites = await prisma.site.findMany({
+    where: { is_disabled: false },
     select: { name: true },
     orderBy: { name: "asc" },
   });

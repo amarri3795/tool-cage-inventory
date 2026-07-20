@@ -124,7 +124,7 @@ export function DataTable<T>({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={searchPlaceholder}
-          className="w-full max-w-sm rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+          className="surface-light w-full max-w-sm rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
         />
         {toolbar}
         <p className="ml-auto text-sm text-[var(--muted)]">

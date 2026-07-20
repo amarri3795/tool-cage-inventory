@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireSiteSession } from "@/lib/site-context";
+import { requireSiteAdminSession } from "@/lib/site-context";
 
 function str(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -23,7 +23,7 @@ export async function createTool(
   _prev: ToolActionState,
   formData: FormData,
 ): Promise<ToolActionState> {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteAdminSession();
   const tool_id = str(formData, "tool_id");
   const name = str(formData, "name");
 
@@ -61,7 +61,7 @@ export async function updateTool(
   _prev: ToolActionState,
   formData: FormData,
 ): Promise<ToolActionState> {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteAdminSession();
   const tool_id = str(formData, "tool_id");
   const name = str(formData, "name");
 

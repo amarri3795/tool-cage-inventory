@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { requireSiteSession } from "@/lib/site-context";
+import { requireSiteAdminSession } from "@/lib/site-context";
 import { EmployeesTable, type EmployeeRow } from "./employees-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmployeesPage() {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteAdminSession();
   const employees = await prisma.employee.findMany({
     where: { site_id: siteId },
     orderBy: { name: "asc" },

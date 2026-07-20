@@ -4,23 +4,38 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+type SessionRole = "master_admin" | "site_admin" | "site_member";
+
+function canAccessInventoryNav(role: SessionRole): boolean {
+  return role === "master_admin" || role === "site_admin";
+}
+
 type SessionInfo = {
   authenticated: boolean;
-  role?: "master_admin" | "site";
+  role?: SessionRole;
   adminId?: string | null;
   siteName?: string | null;
 };
 
-const siteLinks = [
+const memberLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/scan", label: "Scan" },
+] as const;
+
+const siteAdminLinks = [
+  ...memberLinks,
   { href: "/tools", label: "Tools" },
   { href: "/materials", label: "Materials" },
   { href: "/employees", label: "Employees" },
   { href: "/transactions", label: "Transactions" },
+  { href: "/site-settings", label: "Site Settings" },
 ] as const;
 
-const adminLinks = [{ href: "/admin", label: "Admin Dashboard" }] as const;
+const adminLinks = [
+  { href: "/admin", label: "Admin Dashboard" },
+  { href: "/admin/sites", label: "Master Admin Tools" },
+  { href: "/site-settings", label: "Site Settings" },
+] as const;
 
 const linkClassName =
   "rounded-md px-3 py-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]";
@@ -44,14 +59,19 @@ export function AppNav() {
   const isAuthPage =
     pathname === "/" ||
     pathname === "/signup" ||
-    pathname === "/admin/login";
+    pathname === "/admin/login" ||
+    pathname === "/reset-password";
 
   if (isAuthPage || !session?.authenticated) {
     return null;
   }
 
-  const isAdmin = session.role === "master_admin";
-  const links = isAdmin ? adminLinks : siteLinks;
+  const isMaster = session.role === "master_admin";
+  const links = isMaster
+    ? adminLinks
+    : canAccessInventoryNav(session.role ?? "site_member")
+      ? siteAdminLinks
+      : memberLinks;
 
   async function signOut() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -71,11 +91,18 @@ export function AppNav() {
       </nav>
       <div className="flex items-center gap-2 border-l border-[var(--border)] pl-2 text-xs text-[var(--muted)]">
         <span>
-          {isAdmin ? (
+          {isMaster ? (
             <>
               Master{" "}
               <span className="font-medium text-[var(--foreground)]">
                 {session.adminId}
+              </span>
+            </>
+          ) : session.role === "site_admin" ? (
+            <>
+              Admin ·{" "}
+              <span className="font-medium text-[var(--foreground)]">
+                {session.siteName}
               </span>
             </>
           ) : (

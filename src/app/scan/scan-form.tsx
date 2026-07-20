@@ -210,7 +210,7 @@ export function ScanForm() {
                     if (badgeInput.trim()) resolveEmployee();
                   }}
                   placeholder="Badge ID or raw badge string"
-                  className="w-full rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-md border border-[var(--border)] bg-white surface-light px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
                   autoComplete="off"
                 />
                 <button
@@ -242,7 +242,7 @@ export function ScanForm() {
                     if (itemInput.trim()) resolveItem();
                   }}
                   placeholder="TL-001 or MAT-001"
-                  className="w-full rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-md border border-[var(--border)] bg-white surface-light px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
                   autoComplete="off"
                 />
                 <button
@@ -265,7 +265,7 @@ export function ScanForm() {
                 value={action}
                 onChange={(e) => setAction(e.target.value)}
                 disabled={!item}
-                className="mt-1 w-full rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent)] disabled:opacity-50"
+                className="mt-1 w-full rounded-md border border-[var(--border)] bg-white surface-light px-3 py-2 text-sm outline-none focus:border-[var(--accent)] disabled:opacity-50"
               >
                 {!item && <option value="">Lookup an item first</option>}
                 {actionOptions.map((opt) => (
@@ -289,7 +289,7 @@ export function ScanForm() {
                     ? "e.g. 2"
                     : "e.g. Job site repair"
                 }
-                className="mt-1 w-full rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+                className="mt-1 w-full rounded-md border border-[var(--border)] bg-white surface-light px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
               />
             </label>
           </div>

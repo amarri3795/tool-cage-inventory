@@ -1,5 +1,10 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { getSiteScope } from "@/lib/site-context";
+import {
+  getSitePaywallForSession,
+  getSiteScope,
+} from "@/lib/site-context";
+import { isSiteAdminRole } from "@/lib/site-access";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +56,7 @@ function EmptyRow({ colSpan, message }: { colSpan: number; message: string }) {
 
 export default async function DashboardPage() {
   const { where, session } = await getSiteScope();
+  const paywall = session ? await getSitePaywallForSession(session) : { blocked: false };
 
   const [
     totalTools,
@@ -97,6 +103,30 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {paywall.blocked ? (
+        <div className="rounded-lg border border-[var(--warn)]/40 bg-[var(--warn-soft)] px-4 py-3 text-sm">
+          <p className="font-medium text-[var(--warn)]">Access limited</p>
+          <p className="mt-1 text-[var(--foreground)]">
+            {paywall.message ??
+              "Subscription required. Scan and member features are paused until billing is resolved."}
+          </p>
+        </div>
+      ) : null}
+
+      {session && !isSiteAdminRole(session.role) && session.role !== "master_admin" ? (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm">
+          <p className="text-[var(--muted)]">
+            Need to manage tools, materials, or employees?{" "}
+            <Link
+              href="/dashboard/admin-login"
+              className="font-medium text-[var(--accent)] hover:underline"
+            >
+              Site admin login
+            </Link>
+          </p>
+        </div>
+      ) : null}
+
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Tool Cage Dashboard</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">

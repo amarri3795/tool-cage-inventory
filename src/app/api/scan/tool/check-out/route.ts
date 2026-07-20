@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { requireSiteScanAccess } from "@/lib/scan-session";
 import { writeAuditLog } from "@/lib/automation/audit";
 import { prisma } from "@/lib/prisma";
 import {
@@ -15,14 +15,14 @@ import {
 } from "@/lib/scan";
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "site" || session.siteId == null) {
+  const access = await requireSiteScanAccess();
+  if (!access.ok) {
     return NextResponse.json(
-      { success: false, error: "Site login required." },
-      { status: 401 },
+      { success: false, error: access.error },
+      { status: access.status },
     );
   }
-  const siteId = session.siteId;
+  const siteId = access.siteId;
 
   let body: unknown;
   try {

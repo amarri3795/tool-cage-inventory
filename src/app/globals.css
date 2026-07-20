@@ -148,3 +148,22 @@ a {
 .auth-links a:hover {
   text-decoration: underline;
 }
+
+/* Light-surface inputs (forms, tables) — dark text for readability */
+.surface-light,
+input.surface-light,
+select.surface-light,
+textarea.surface-light,
+.bg-white {
+  color: #1a1f28;
+}
+
+.bg-white::placeholder,
+input.surface-light::placeholder {
+  color: #6b7280;
+}
+
+.auth-input option {
+  color: #1a1f28;
+  background: #fff;
+}

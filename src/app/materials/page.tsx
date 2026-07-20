@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { requireSiteSession } from "@/lib/site-context";
+import { requireSiteAdminSession } from "@/lib/site-context";
 import { MaterialsTable, type MaterialRow } from "./materials-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function MaterialsPage() {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteAdminSession();
   const materials = await prisma.material.findMany({
     where: { site_id: siteId },
     orderBy: { material_id: "asc" },

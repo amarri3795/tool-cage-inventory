@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireSiteSession } from "@/lib/site-context";
+import { requireSiteAdminSession } from "@/lib/site-context";
 
 function str(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -30,7 +30,7 @@ export async function createMaterial(
   _prev: MaterialActionState,
   formData: FormData,
 ): Promise<MaterialActionState> {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteAdminSession();
   const material_id = str(formData, "material_id");
   const name = str(formData, "name");
 
@@ -75,7 +75,7 @@ export async function updateMaterial(
   _prev: MaterialActionState,
   formData: FormData,
 ): Promise<MaterialActionState> {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteAdminSession();
   const material_id = str(formData, "material_id");
   const name = str(formData, "name");
 

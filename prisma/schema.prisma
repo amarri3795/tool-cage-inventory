@@ -9,22 +9,46 @@ datasource db {
 
 /// Plant / facility (multi-site)
 model Site {
-  id                    Int                   @id @default(autoincrement())
-  name                  String                @unique
-  password_hash         String
-  contact_email         String
-  created_at            DateTime              @default(now())
-  updated_at            DateTime              @updatedAt
-  employees             Employee[]
-  tools                 Tool[]
-  materials             Material[]
-  tool_transactions     ToolTransaction[]
-  material_transactions MaterialTransaction[]
-  audit_logs            AuditLog[]
-  settings              Setting[]
-  update_logs           UpdateLog[]
+  id                       Int                   @id @default(autoincrement())
+  name                     String                @unique
+  password_hash            String
+  site_admin_password_hash String?
+  contact_email            String
+  is_disabled              Boolean               @default(false)
+  paywall_enabled          Boolean               @default(false)
+  paywall_price            Decimal               @default(0) @db.Decimal(10, 2)
+  billing_cycle            String                @default("monthly")
+  free_trial_days          Int                   @default(14)
+  free_trial_preset        String?
+  paywall_paid             Boolean               @default(false)
+  trial_started_at         DateTime?
+  created_at               DateTime              @default(now())
+  updated_at               DateTime              @updatedAt
+  employees                Employee[]
+  tools                    Tool[]
+  materials                Material[]
+  tool_transactions        ToolTransaction[]
+  material_transactions    MaterialTransaction[]
+  audit_logs               AuditLog[]
+  settings                 Setting[]
+  update_logs              UpdateLog[]
+  password_reset_tokens    PasswordResetToken[]
 
   @@map("sites")
+}
+
+/// Password reset tokens (email/link flow stub)
+model PasswordResetToken {
+  id         Int      @id @default(autoincrement())
+  site_id    Int
+  site       Site     @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  token_hash String   @unique
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime @default(now())
+
+  @@index([site_id])
+  @@map("password_reset_tokens")
 }
 
 /// Employee Directory

@@ -18,7 +18,7 @@ import {
   type EmployeeSummary,
   type ItemSummary,
 } from "@/lib/scan";
-import { requireSiteSession } from "@/lib/site-context";
+import { requireSiteScanSession } from "@/lib/site-context";
 
 export type LookupEmployeeResult =
   | { ok: true; employee: EmployeeSummary }
@@ -35,7 +35,7 @@ export type SubmitScanResult =
 export async function lookupEmployeeAction(
   badgeInput: string,
 ): Promise<LookupEmployeeResult> {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteScanSession();
   const trimmed = badgeInput.trim();
   if (!trimmed) {
     return { ok: false, error: "Enter a badge ID." };
@@ -55,7 +55,7 @@ export async function lookupEmployeeAction(
 export async function lookupItemAction(
   itemInput: string,
 ): Promise<LookupItemResult> {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteScanSession();
   const trimmed = itemInput.trim();
   if (!trimmed) {
     return { ok: false, error: "Enter a tool or material ID." };
@@ -87,7 +87,7 @@ export async function submitScanAction(input: {
   action: string;
   qtyPurpose: string;
 }): Promise<SubmitScanResult> {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteScanSession();
   const badgeInput = input.badgeInput.trim();
   const itemInput = input.itemInput.trim();
   const action = input.action.trim();

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { AccessControlSection } from "@/components/admin/AccessControlSection";
@@ -222,6 +223,12 @@ export function AdminControlCenter() {
             Configure cage settings, access, alerts, and run operational checks —
             backed by the database, not Excel.
           </p>
+          <Link
+            href="/admin/sites"
+            className="mt-3 inline-block text-sm font-medium text-[var(--accent)] hover:underline"
+          >
+            Open Master Admin Tools →
+          </Link>
         </header>
 
         <SystemSettingsSection

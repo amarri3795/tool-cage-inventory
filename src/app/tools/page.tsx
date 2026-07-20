@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { requireSiteSession } from "@/lib/site-context";
+import { requireSiteAdminSession } from "@/lib/site-context";
 import { ToolsTable, type ToolRow } from "./tools-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function ToolsPage() {
-  const { siteId } = await requireSiteSession();
+  const { siteId } = await requireSiteAdminSession();
   const tools = await prisma.tool.findMany({
     where: { site_id: siteId },
     orderBy: { tool_id: "asc" },

@@ -629,17 +629,22 @@ async function clearInventory() {
 async function ensureDefaultSite() {
   const plain =
     process.env.DEFAULT_SITE_PASSWORD?.trim() || "ChangeMeSite1!";
+  const adminPlain =
+    process.env.DEFAULT_SITE_ADMIN_PASSWORD?.trim() || `${plain}Admin`;
   const password_hash = await bcrypt.hash(plain, 12);
+  const site_admin_password_hash = await bcrypt.hash(adminPlain, 12);
 
   return prisma.site.upsert({
     where: { name: DEFAULT_SITE_NAME },
     create: {
       name: DEFAULT_SITE_NAME,
       password_hash,
+      site_admin_password_hash,
       contact_email: DEFAULT_SITE_EMAIL,
     },
     update: {
       password_hash,
+      site_admin_password_hash,
       contact_email: DEFAULT_SITE_EMAIL,
     },
   });
