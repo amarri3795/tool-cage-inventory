@@ -28,6 +28,7 @@ const siteAdminLinks = [
   { href: "/materials", label: "Materials" },
   { href: "/employees", label: "Employees" },
   { href: "/transactions", label: "Transactions" },
+  { href: "/reports", label: "Reports" },
   { href: "/site-settings", label: "Site Settings" },
 ] as const;
 

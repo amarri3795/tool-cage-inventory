@@ -1,6 +1,6 @@
 # Automation — OpsFlow
 
-Scheduled jobs for overdue tools → Missing and low-stock alerts.
+Scheduled jobs for overdue tools → Missing, low-stock alerts, and inventory report digests.
 
 ## What runs
 
@@ -8,6 +8,7 @@ Scheduled jobs for overdue tools → Missing and low-stock alerts.
 |-----|----------|
 | **Mark missing** | Tools with status `Checked Out` whose `checkout_time` is older than `missing_after_hours` are set to `Missing`. Writes `audit_logs` (+ `update_logs`). |
 | **Low stock alerts** | Materials with `current_qty <= min_qty` (or status Low Stock). Simulated email (console + audit). Frequency gated by `alert_frequency_hours`. Resets flags when stock is OK if `reset_email_flag_when_ok=true`. |
+| **Inventory reports** | Writes `ops_reports` rows (`daily_inventory` / `weekly_inventory`) with tool/material/txn summary JSON. Simulated email (console + audit). View at `/reports`. |
 
 ## Settings keys (DB `settings` table)
 
@@ -25,14 +26,20 @@ Scheduled jobs for overdue tools → Missing and low-stock alerts.
 With the app running (`npm run dev` or `npm start`):
 
 ```bash
-# Both jobs
+# All jobs (includes daily inventory reports)
 curl -X POST http://localhost:3000/api/automation/run
+
+# All jobs + weekly reports
+curl -X POST http://localhost:3000/api/automation/run -H "Content-Type: application/json" -d "{\"includeWeeklyReports\":true}"
 
 # Missing tools only
 curl -X POST http://localhost:3000/api/automation/mark-missing
 
 # Low stock alerts only
 curl -X POST http://localhost:3000/api/automation/low-stock-alerts
+
+# Inventory reports only (type: daily | weekly | all)
+curl -X POST http://localhost:3000/api/automation/reports/run -H "Content-Type: application/json" -d "{\"type\":\"daily\"}"
 
 # Admin Control Center actions (same logic)
 curl -X POST http://localhost:3000/api/admin/actions/mark-missing
@@ -49,6 +56,9 @@ npm run automation:run
 npx tsx scripts/run-automation.ts --missing-only
 npx tsx scripts/run-automation.ts --alerts-only
 npx tsx scripts/run-automation.ts --force-alerts
+npx tsx scripts/run-automation.ts --reports-only
+npx tsx scripts/run-automation.ts --reports-only --weekly
+npx tsx scripts/run-automation.ts --include-weekly
 ```
 
 ## Windows Task Scheduler

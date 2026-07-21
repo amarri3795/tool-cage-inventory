@@ -7,6 +7,7 @@ export const SITE_ADMIN_PATHS = [
   "/materials",
   "/employees",
   "/transactions",
+  "/reports",
   "/site-settings",
 ] as const;
 

@@ -33,6 +33,7 @@ model Site {
   settings                 Setting[]
   update_logs              UpdateLog[]
   password_reset_tokens    PasswordResetToken[]
+  reports                  Report[]
 
   @@map("sites")
 }
@@ -223,4 +224,22 @@ model UpdateLog {
 
   @@index([site_id])
   @@map("update_logs")
+}
+
+/// Scheduled inventory digests (daily / weekly)
+model Report {
+  id           Int      @id @default(autoincrement())
+  site_id      Int
+  site         Site     @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  type         String
+  period_start DateTime
+  period_end   DateTime
+  summary      Json
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([site_id])
+  @@index([site_id, created_at])
+  @@index([site_id, type])
+  @@map("ops_reports")
 }
