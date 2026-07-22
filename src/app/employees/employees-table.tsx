@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
+import { primaryButtonClassName } from "@/components/form-fields";
 import {
   DEFAULT_SITE_LABELS,
   type SiteLabels,
@@ -62,16 +64,23 @@ export function EmployeesTable({
   rows: EmployeeRow[];
   labels?: SiteLabels;
 }) {
+  const addLabel = `Add ${labels.employeeSingular.toLowerCase()}`;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {labels.employees}
-        </h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          People who can check out {labels.tools.toLowerCase()} and take{" "}
-          {labels.materials.toLowerCase()}.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {labels.employees}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            People who can check out {labels.tools.toLowerCase()} and take{" "}
+            {labels.materials.toLowerCase()}.
+          </p>
+        </div>
+        <Link href="/employees/new" className={primaryButtonClassName}>
+          {addLabel}
+        </Link>
       </div>
       <DataTable
         rows={rows}
