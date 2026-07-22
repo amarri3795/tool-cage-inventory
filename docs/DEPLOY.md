@@ -81,6 +81,6 @@ In Vercel → Project → **Settings** → **Domains** → add a domain you buy 
 
 ## Notes
 
-- Dashboard / Scan stay public; Tools / Materials / Employees / Transactions still need admin badge login (`6279` from seed, or `dev` only in local development — not on Vercel production).
+- Dashboard / Scan stay public; Tools / Materials / Employees / Transactions still need admin badge login (configured admin badge IDs from seed/settings, or `dev` only in local development — not on Vercel production).
 - Do **not** commit `.env`. `.gitignore` already excludes it.
 - Low-stock email alerts are still simulated (logged), not real SMTP email.
