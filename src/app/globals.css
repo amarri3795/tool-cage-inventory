@@ -29,6 +29,19 @@ a {
   color: var(--accent);
 }
 
+/* Primary / secondary buttons (including <Link> styled as buttons) */
+.btn-primary,
+a.btn-primary {
+  color: #16120a !important;
+  text-decoration: none;
+}
+
+.btn-secondary,
+a.btn-secondary {
+  color: var(--foreground) !important;
+  text-decoration: none;
+}
+
 .auth-shell {
   min-height: calc(100vh - 5rem);
   display: flex;

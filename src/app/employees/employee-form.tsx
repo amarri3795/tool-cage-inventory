@@ -39,7 +39,7 @@ export function EmployeeForm({ initial }: { initial: EmployeeFormValues }) {
           name="badge_id"
           required
           defaultValue={initial.badge_id}
-          placeholder="B-1001"
+          placeholder="1001"
           className={inputClassName}
         />
       </FormField>
@@ -47,14 +47,14 @@ export function EmployeeForm({ initial }: { initial: EmployeeFormValues }) {
       <FormField
         label="Raw badge data"
         name="raw_badge_data"
-        hint="Exact scan string stored for badge matching (e.g. 4MT$RECV%B-1001)."
+        hint="Exact scan string stored for badge matching (e.g. B-1001)."
       >
         <input
           id="raw_badge_data"
           name="raw_badge_data"
           required
           defaultValue={initial.raw_badge_data}
-          placeholder="4MT$RECV%B-1001"
+          placeholder="B-1001"
           className={inputClassName}
         />
       </FormField>

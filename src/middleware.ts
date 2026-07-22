@@ -25,6 +25,7 @@ const PUBLIC_PATHS = [
 
 function isPublic(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;
+  if (pathname.startsWith("/preview")) return true;
   if (pathname.startsWith("/_next")) return true;
   if (pathname.startsWith("/favicon")) return true;
   return false;
