@@ -4,13 +4,16 @@ import "../preview.css";
 export const dynamic = "force-static";
 
 /**
- * Design preview only — redesigned landing with glass UI.
- * Open /preview/landing before replacing production `/`.
+ * Design preview — redesigned landing with clear glass + logo backdrop.
+ * Open /preview/landing
  */
 export default function LandingPreviewPage() {
   return (
     <div className="preview-shell preview-landing">
-      <div className="preview-landing-bg" aria-hidden />
+      <div className="preview-logo-backdrop" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/opsflow-logo.png" alt="" />
+      </div>
 
       <div className="preview-landing-layout">
         <section className="preview-landing-hero">
@@ -22,33 +25,33 @@ export default function LandingPreviewPage() {
           />
           <p className="preview-eyebrow">OpsFlow</p>
           <h1 className="preview-landing-headline">
-            Run the cage.
+            Operations,
             <br />
-            From one screen.
+            from one screen.
           </h1>
           <p className="preview-landing-copy">
-            Multi-site inventory, scan check-out, and stock tracking for plants
-            that need clarity — not another spreadsheet.
+            Inventory, check-outs, and stock across every site — clear enough
+            for the floor, strong enough for the office.
           </p>
           <ul className="preview-landing-points">
-            <li>Equipment check-out or inventory presets</li>
-            <li>Badge scan on the floor</li>
+            <li>Presets for check-out, inventory, or both</li>
+            <li>Badge scan when you need it</li>
             <li>Site admin + master control</li>
           </ul>
         </section>
 
         <section className="preview-glass preview-landing-card">
           <p className="preview-eyebrow">Site login</p>
-          <h2 className="preview-landing-card-title">Enter your plant</h2>
+          <h2 className="preview-landing-card-title">Enter your site</h2>
           <p className="preview-sub">
-            Same core fields as today — plant name, password, remember me —
-            in a glass panel.
+            Same core fields — site name, password, remember me — in clear glass
+            over the brand.
           </p>
 
           <div className="preview-landing-form">
             <label className="preview-field">
-              Plant name
-              <input className="preview-input" placeholder="YourPlant" readOnly />
+              Site name
+              <input className="preview-input" placeholder="YourSite" readOnly />
             </label>
             <label className="preview-field">
               Site password
@@ -68,7 +71,7 @@ export default function LandingPreviewPage() {
           </div>
 
           <div className="preview-landing-card-links">
-            <span>New plant? Sign up</span>
+            <span>New site? Sign up</span>
             <span>Reset password</span>
             <span>Admin login</span>
           </div>

@@ -4,12 +4,17 @@ import "../preview.css";
 export const dynamic = "force-static";
 
 /**
- * Design preview only — not production UI.
- * Open /preview/glass to review frosted “iPhone glass” surfaces before site-wide rollout.
+ * Design preview — clear glass over logo backdrop.
+ * Open /preview/glass
  */
 export default function GlassPreviewPage() {
   return (
     <div className="preview-shell">
+      <div className="preview-logo-backdrop" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/opsflow-logo.png" alt="" />
+      </div>
+
       <div className="preview-frame">
         <header className="preview-glass preview-header">
           <div className="flex items-center gap-2">
@@ -25,11 +30,11 @@ export default function GlassPreviewPage() {
         </header>
 
         <main className="preview-main">
-          <p className="preview-eyebrow">Preview · Glass UI</p>
-          <h1 className="preview-title">Frosted surfaces</h1>
+          <p className="preview-eyebrow">Preview · Clear glass</p>
+          <h1 className="preview-title">See-through panels</h1>
           <p className="preview-sub">
-            iPhone-style glass panels on a soft dark backdrop. Not applied site-wide
-            yet — tell us if you want this look.
+            Logo sits large in the background. Panels are clear glass — light tint,
+            thin edge, light blur — so the mark shows through.
           </p>
 
           <section className="preview-stat-grid">
