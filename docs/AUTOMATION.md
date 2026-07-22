@@ -10,6 +10,21 @@ Scheduled jobs for overdue tools → Missing, low-stock alerts, and inventory re
 | **Low stock alerts** | Materials with `current_qty <= min_qty` (or status Low Stock). Simulated email (console + audit). Frequency gated by `alert_frequency_hours`. Resets flags when stock is OK if `reset_email_flag_when_ok=true`. |
 | **Inventory reports** | Writes `ops_reports` rows (`daily_inventory` / `weekly_inventory`) with tool/material/txn summary JSON. Simulated email (console + audit). View at `/reports`. |
 
+## Vercel Cron (production schedule)
+
+`vercel.json` runs **daily at 12:00 UTC** (`0 12 * * *`):
+
+- Path: `GET/POST /api/cron/automation`
+- Runs mark-missing + low-stock + **daily** reports
+- On **Sundays (UTC)** also generates **weekly** reports
+
+Set `CRON_SECRET` in Vercel (and optionally local `.env`). Vercel sends `Authorization: Bearer $CRON_SECRET`. Without a matching secret in production, the route returns 401.
+
+```bash
+# Manual cron-style call (local: CRON_SECRET optional in development)
+curl -X GET "http://localhost:3000/api/cron/automation" -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
+
 ## Settings keys (DB `settings` table)
 
 | Key | Default | Purpose |

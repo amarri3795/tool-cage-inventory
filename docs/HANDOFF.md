@@ -43,7 +43,7 @@ Open http://localhost:3000
 
 **Billing:** **Fake / manual only.** Site has `paywall_*` fields toggled by master admin. **No Stripe yet** — add later when finalized.
 
-**Automation (light):** mark overdue tools Missing; simulated low-stock alerts; audit logs. Run via `POST /api/automation/run` or `npm run automation:run`.
+**Automation (light):** mark overdue tools Missing; simulated low-stock alerts; daily/weekly inventory reports; audit logs. Manual: `POST /api/automation/run` or `npm run automation:run`. **Production:** Vercel Cron hits `/api/cron/automation` daily (set `CRON_SECRET`).
 
 **Stack:** Next.js 15 App Router, TypeScript, Tailwind, Prisma, PostgreSQL (Neon), bcrypt + JWT cookie auth (`SESSION_SECRET`). Not Supabase / ShadCN / Stripe yet.
 
@@ -58,6 +58,7 @@ MASTER_ADMIN_ID=your-admin-id
 MASTER_ADMIN_PASSWORD=your-admin-password
 DEFAULT_SITE_PASSWORD=site-member-password
 DEFAULT_SITE_ADMIN_PASSWORD=optional-explicit-site-admin-password
+CRON_SECRET=long-random-cron-secret
 ```
 
 If `DEFAULT_SITE_ADMIN_PASSWORD` is unset, seed uses `{DEFAULT_SITE_PASSWORD}Admin`.

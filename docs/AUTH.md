@@ -12,6 +12,7 @@ Add these in Vercel → Settings → Environment Variables (no quotes):
 | `MASTER_ADMIN_PASSWORD` | Your master admin password |
 | `DEFAULT_SITE_PASSWORD` | Optional; used when seeding site member password |
 | `DEFAULT_SITE_ADMIN_PASSWORD` | Optional; seeded site admin password for BowlingGreenKY |
+| `CRON_SECRET` | Long random string; authorizes `/api/cron/automation` (Vercel Cron) |
 
 After changing env vars, **Redeploy**.
 
@@ -20,7 +21,7 @@ After changing env vars, **Redeploy**.
 | Role | How to sign in | Navigation |
 |------|----------------|------------|
 | **site_member** | `/` plant name + site password | Dashboard, Scan only |
-| **site_admin** | Site member session → **Site admin login** on dashboard (`/dashboard/admin-login`) | + Tools, Materials, Employees, Transactions, Site Settings |
+| **site_admin** | Site member session → **Site admin login** on dashboard (`/dashboard/admin-login`) | + Tools, Materials, Employees, Transactions, Reports, Site Settings |
 | **master_admin** | `/admin/login` (or master ID/password on site login bypass) | Admin Dashboard, Master Admin Tools (`/admin/sites`), full override |
 
 ## App flow

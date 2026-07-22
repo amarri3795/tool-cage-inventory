@@ -53,6 +53,10 @@ git push -u origin main
 | Name | Value |
 |------|--------|
 | `DATABASE_URL` | Same Neon connection string as in `.env` |
+| `SESSION_SECRET` | Long random string (32+ chars) |
+| `MASTER_ADMIN_ID` | Master admin username |
+| `MASTER_ADMIN_PASSWORD` | Master admin password |
+| `CRON_SECRET` | Long random string (authorizes daily Vercel Cron at `/api/cron/automation`) |
 
 4. Click **Deploy**.
 5. When it finishes, Vercel gives you a public URL like:

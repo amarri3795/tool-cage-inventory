@@ -20,6 +20,7 @@ const PUBLIC_PATHS = [
   "/api/auth/sites",
   "/api/auth/session",
   "/api/auth/logout",
+  "/api/cron/automation",
 ];
 
 function isPublic(pathname: string) {
