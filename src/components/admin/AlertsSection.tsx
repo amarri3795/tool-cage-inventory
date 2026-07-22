@@ -31,7 +31,7 @@ export function AlertsSection({ settings, busy, onChange, onSave }: Props) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:col-span-2">
+        <div className="glass-panel p-4 sm:col-span-2">
           <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
@@ -52,7 +52,7 @@ export function AlertsSection({ settings, busy, onChange, onSave }: Props) {
           </label>
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <label className="text-sm font-medium">Alert email recipient</label>
           <input
             type="email"
@@ -63,7 +63,7 @@ export function AlertsSection({ settings, busy, onChange, onSave }: Props) {
           />
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <label className="text-sm font-medium">Alert frequency (hours)</label>
           <input
             type="number"
@@ -77,7 +77,7 @@ export function AlertsSection({ settings, busy, onChange, onSave }: Props) {
           />
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:col-span-2">
+        <div className="glass-panel p-4 sm:col-span-2">
           <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"

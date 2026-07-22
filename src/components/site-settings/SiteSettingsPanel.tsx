@@ -179,7 +179,7 @@ export function SiteSettingsPanel() {
       </div>
 
       {isMaster ? (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <p className="text-sm font-medium">Master admin — select site</p>
           <ul className="mt-2 flex flex-wrap gap-2 text-sm">
             {masterSites.map((s) => (
@@ -248,7 +248,7 @@ export function SiteSettingsPanel() {
           />
         </label>
 
-        <fieldset className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+        <fieldset className="space-y-3 glass-panel p-4">
           <legend className="px-1 text-sm font-medium text-[var(--accent)]">
             Operation preset
           </legend>
@@ -291,7 +291,7 @@ export function SiteSettingsPanel() {
           </label>
         </fieldset>
 
-        <fieldset className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+        <fieldset className="space-y-3 glass-panel p-4">
           <legend className="px-1 text-sm font-medium text-[var(--accent)]">
             Labels
           </legend>

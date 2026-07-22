@@ -180,13 +180,13 @@ export function AdminControlCenter() {
   return (
     <div className="relative lg:grid lg:grid-cols-[220px_1fr] lg:gap-8">
       {toast ? (
-        <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm shadow-lg">
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm glass-panel px-4 py-2.5 text-sm shadow-lg">
           {toast}
         </div>
       ) : null}
 
       <aside className="mb-6 lg:sticky lg:top-4 lg:mb-0 lg:self-start">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
             Control Center
           </p>

@@ -198,7 +198,7 @@ export function ScanForm({
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+        <section className="glass-panel p-4 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
             Scan inputs
           </h2>
@@ -332,7 +332,7 @@ export function ScanForm({
         </section>
 
         <section className="space-y-4">
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+          <div className="glass-panel p-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
               Employee
             </h2>
@@ -353,7 +353,7 @@ export function ScanForm({
             )}
           </div>
 
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+          <div className="glass-panel p-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
               Item details
             </h2>

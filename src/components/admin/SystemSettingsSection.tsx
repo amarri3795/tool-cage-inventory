@@ -77,7 +77,7 @@ export function SystemSettingsSection({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <FieldLabel hint="Hours after checkout before auto status becomes MISSING">
             Missing after hours
           </FieldLabel>
@@ -93,7 +93,7 @@ export function SystemSettingsSection({
           />
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <FieldLabel hint="Applied to new tools and materials when location is blank">
             Default location
           </FieldLabel>
@@ -105,7 +105,7 @@ export function SystemSettingsSection({
           />
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:col-span-2">
+        <div className="glass-panel p-4 sm:col-span-2">
           <FieldLabel hint="One status per line">Allowed tool statuses</FieldLabel>
           <TextArea
             value={settings.allowed_tool_statuses}
@@ -116,7 +116,7 @@ export function SystemSettingsSection({
           />
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <FieldLabel hint="Scanner / transaction actions">Allowed actions</FieldLabel>
           <TextArea
             value={settings.allowed_actions}
@@ -124,7 +124,7 @@ export function SystemSettingsSection({
           />
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <FieldLabel hint="Tool condition pick-list">Allowed conditions</FieldLabel>
           <TextArea
             value={settings.allowed_conditions}
@@ -132,7 +132,7 @@ export function SystemSettingsSection({
           />
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:col-span-2">
+        <div className="glass-panel p-4 sm:col-span-2">
           <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"

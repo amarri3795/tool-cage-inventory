@@ -49,7 +49,7 @@ const adminLinks: NavLink[] = [
 ];
 
 const linkClassName =
-  "rounded-md px-3 py-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]";
+  "rounded-full px-3 py-1.5 text-[var(--muted)] hover:bg-white/10 hover:text-[var(--accent)]";
 
 export function AppNav() {
   const pathname = usePathname();

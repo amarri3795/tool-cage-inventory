@@ -37,7 +37,7 @@ export function AccessControlSection({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <label className="text-sm font-medium">Admin badge IDs</label>
           <p className="mb-2 text-xs text-[var(--muted)]">
             One ID per line. Only these badges can use /admin APIs.
@@ -57,7 +57,7 @@ export function AccessControlSection({
           />
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="glass-panel p-4">
           <label className="text-sm font-medium">
             Material manager badge IDs
           </label>
@@ -80,7 +80,7 @@ export function AccessControlSection({
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+      <div className="glass-panel p-4">
         <h3 className="text-sm font-semibold">Role permissions</h3>
         <p className="mb-4 text-xs text-[var(--muted)]">
           Edit permission tokens per role (comma-separated). Used by the control

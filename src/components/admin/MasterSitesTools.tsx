@@ -155,7 +155,7 @@ export function MasterSitesTools() {
         {sites.map((site) => (
           <article
             key={site.id}
-            className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4"
+            className="glass-panel p-4"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>

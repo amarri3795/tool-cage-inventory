@@ -21,12 +21,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
-      <header className="border-b border-[var(--border)] bg-[var(--card)]">
+    <div className="app-shell">
+      <div className="app-logo-backdrop" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/opsflow-logo.png" alt="" />
+      </div>
+      <header className="app-header glass-panel">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Link
-            href="/"
-            className="flex items-center gap-2 text-lg font-semibold tracking-tight"
+            href="/dashboard"
+            className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[var(--foreground)] no-underline"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/opsflow-logo.png" alt="" className="h-8 w-auto" />
@@ -35,7 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <AppNav />
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-    </>
+      <main className="app-main mx-auto max-w-6xl px-4 py-6">{children}</main>
+    </div>
   );
 }

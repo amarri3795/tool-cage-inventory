@@ -40,7 +40,7 @@ function ActionButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-xl border bg-[var(--card)] p-4 text-left transition disabled:opacity-50 ${toneClass}`}
+      className={`glass-panel p-4 text-left transition disabled:opacity-50 ${toneClass}`}
     >
       <span className="block text-sm font-semibold">{label}</span>
       <span className="mt-1 block text-xs text-[var(--muted)]">
@@ -125,7 +125,7 @@ export function AdminActionsSection({
         )}
       </div>
 
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm">
+      <div className="glass-panel px-4 py-3 text-sm">
         <span className="text-[var(--muted)]">Inventory edit lock: </span>
         <span
           className={

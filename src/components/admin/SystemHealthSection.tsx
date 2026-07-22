@@ -22,7 +22,7 @@ export function SystemHealthSection({ health, busy, onRefresh }: Props) {
           type="button"
           disabled={busy}
           onClick={onRefresh}
-          className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium hover:bg-[var(--accent-soft)] disabled:opacity-50"
+          className="glass-panel px-4 py-2 text-sm font-medium hover:bg-[var(--accent-soft)] disabled:opacity-50"
         >
           {busy ? "Checking…" : "Run health checks"}
         </button>
@@ -31,19 +31,19 @@ export function SystemHealthSection({ health, busy, onRefresh }: Props) {
       {health ? (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3">
+            <div className="glass-panel px-4 py-3">
               <p className="text-xs text-[var(--muted)]">Passing</p>
               <p className="text-2xl font-semibold tabular-nums text-[var(--accent)]">
                 {health.summary.passing}/{health.summary.total_checks}
               </p>
             </div>
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3">
+            <div className="glass-panel px-4 py-3">
               <p className="text-xs text-[var(--muted)]">Failing</p>
               <p className="text-2xl font-semibold tabular-nums text-[var(--danger)]">
                 {health.summary.failing}
               </p>
             </div>
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3">
+            <div className="glass-panel px-4 py-3">
               <p className="text-xs text-[var(--muted)]">Total issues</p>
               <p className="text-2xl font-semibold tabular-nums">
                 {health.summary.total_issues}

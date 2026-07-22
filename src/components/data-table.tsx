@@ -132,9 +132,9 @@ export function DataTable<T>({
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
+      <div className="glass-panel overflow-x-auto">
         <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
+          <thead className="border-b border-white/15 bg-black/20 text-[var(--muted)]">
             <tr>
               {columns.map((column) => {
                 const sortable = column.sortable !== false;

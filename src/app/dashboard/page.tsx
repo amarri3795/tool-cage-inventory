@@ -38,15 +38,17 @@ function StatCard({
 }) {
   const toneClass =
     tone === "ok"
-      ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]"
+      ? "border-[var(--accent)]/40 bg-[var(--accent-soft)]"
       : tone === "warn"
-        ? "border-[var(--warn)]/30 bg-[var(--warn-soft)]"
+        ? "border-[var(--warn)]/40 bg-[var(--warn-soft)]"
         : tone === "danger"
-          ? "border-[var(--danger)]/30 bg-[var(--danger-soft)]"
-          : "border-[var(--border)] bg-[var(--card)]";
+          ? "border-[var(--danger)]/40 bg-[var(--danger-soft)]"
+          : "";
 
   return (
-    <div className={`rounded-lg border px-4 py-3 shadow-sm ${toneClass}`}>
+    <div
+      className={`glass-panel px-4 py-3 ${toneClass}`}
+    >
       <p className="text-sm text-[var(--muted)]">{label}</p>
       <p className="mt-1 text-3xl font-semibold tabular-nums">{value}</p>
     </div>
@@ -145,7 +147,7 @@ export default async function DashboardPage() {
       {session &&
       !isSiteAdminRole(session.role) &&
       session.role !== "master_admin" ? (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm">
+        <div className="glass-panel px-4 py-3 text-sm">
           <p className="text-[var(--muted)]">
             Need to manage {labels.tools.toLowerCase()},{" "}
             {labels.materials.toLowerCase()}, or{" "}
@@ -213,7 +215,7 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold">
             {labels.tools} Currently Checked Out
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
+          <div className="overflow-x-auto glass-panel">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
                 <tr>
@@ -261,7 +263,7 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold">
             Missing {labels.tools} — Last Known User
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
+          <div className="overflow-x-auto glass-panel">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
                 <tr>
@@ -309,7 +311,7 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold">
             {labels.materials} on hand
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
+          <div className="overflow-x-auto glass-panel">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
                 <tr>
@@ -371,7 +373,7 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold">
             Low Stock {labels.materials}
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
+          <div className="overflow-x-auto glass-panel">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
                 <tr>
@@ -432,7 +434,7 @@ export default async function DashboardPage() {
       {features.showRecentTakes ? (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Recent stock moves</h2>
-          <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
+          <div className="overflow-x-auto glass-panel">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
                 <tr>
