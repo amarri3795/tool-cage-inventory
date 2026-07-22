@@ -151,7 +151,7 @@ export function AuthCard({ mode }: Props) {
         ? "Master admin access to the control center."
         : mode === "site-admin-login"
           ? "Enter the site admin password to manage inventory and settings."
-          : "Site name, password, and remember me — same as always.";
+          : null;
 
   const showLandingHero = mode === "site-login";
 
@@ -203,7 +203,7 @@ export function AuthCard({ mode }: Props) {
             {mode === "admin-login" ? "OpsFlow Admin" : "OpsFlow"}
           </p>
           <h1 className="auth-title">{cardTitle}</h1>
-          <p className="auth-sub">{cardSubtitle}</p>
+          {cardSubtitle ? <p className="auth-sub">{cardSubtitle}</p> : null}
 
           <form onSubmit={onSubmit} className="auth-form">
             {mode !== "site-admin-login" ? (
