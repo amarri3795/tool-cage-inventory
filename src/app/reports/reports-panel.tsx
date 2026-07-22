@@ -30,9 +30,11 @@ function typeLabel(type: string) {
 export function ReportsPanel({
   siteId,
   rows,
+  title = "Reports",
 }: {
   siteId: number;
   rows: ReportListItem[];
+  title?: string;
 }) {
   const router = useRouter();
   const [expandedId, setExpandedId] = useState<number | null>(
@@ -80,7 +82,7 @@ export function ReportsPanel({
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
             Daily and weekly inventory digests for this site. Email delivery is
             simulated (logged) until real SMTP is wired.

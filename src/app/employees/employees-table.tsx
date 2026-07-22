@@ -1,6 +1,10 @@
 "use client";
 
 import { DataTable, type DataTableColumn } from "@/components/data-table";
+import {
+  DEFAULT_SITE_LABELS,
+  type SiteLabels,
+} from "@/lib/site-labels";
 
 export type EmployeeRow = {
   id: number;
@@ -35,7 +39,10 @@ const columns: DataTableColumn<EmployeeRow>[] = [
     header: "Raw Badge Data",
     sortValue: (r) => r.raw_badge_data,
     render: (r) => (
-      <span className="max-w-xs truncate font-mono text-xs" title={r.raw_badge_data}>
+      <span
+        className="max-w-xs truncate font-mono text-xs"
+        title={r.raw_badge_data}
+      >
         {r.raw_badge_data}
       </span>
     ),
@@ -48,15 +55,32 @@ const columns: DataTableColumn<EmployeeRow>[] = [
   },
 ];
 
-export function EmployeesTable({ rows }: { rows: EmployeeRow[] }) {
+export function EmployeesTable({
+  rows,
+  labels = DEFAULT_SITE_LABELS,
+}: {
+  rows: EmployeeRow[];
+  labels?: SiteLabels;
+}) {
   return (
-    <DataTable
-      rows={rows}
-      columns={columns}
-      getRowKey={(r) => r.id}
-      searchPlaceholder="Search employees…"
-      emptyMessage="No employees match your search."
-      initialSortKey="name"
-    />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {labels.employees}
+        </h1>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          People who can check out {labels.tools.toLowerCase()} and take{" "}
+          {labels.materials.toLowerCase()}.
+        </p>
+      </div>
+      <DataTable
+        rows={rows}
+        columns={columns}
+        getRowKey={(r) => r.id}
+        searchPlaceholder={`Search ${labels.employees.toLowerCase()}…`}
+        emptyMessage={`No ${labels.employees.toLowerCase()} match your search.`}
+        initialSortKey="name"
+      />
+    </div>
   );
 }

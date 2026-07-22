@@ -5,7 +5,8 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 
 export type TransactionRow = {
   key: string;
-  type: "Tool" | "Material";
+  kind: "tool" | "material";
+  type: string;
   transaction_id: string;
   occurred_at: string;
   badge_id: string;
@@ -85,12 +86,20 @@ const tabClass = (active: boolean) =>
       : "text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
   }`;
 
-export function TransactionsTable({ rows }: { rows: TransactionRow[] }) {
+export function TransactionsTable({
+  rows,
+  toolLabel = "Tools",
+  materialLabel = "Materials",
+}: {
+  rows: TransactionRow[];
+  toolLabel?: string;
+  materialLabel?: string;
+}) {
   const [tab, setTab] = useState<Tab>("all");
 
   const filtered = useMemo(() => {
-    if (tab === "tool") return rows.filter((r) => r.type === "Tool");
-    if (tab === "material") return rows.filter((r) => r.type === "Material");
+    if (tab === "tool") return rows.filter((r) => r.kind === "tool");
+    if (tab === "material") return rows.filter((r) => r.kind === "material");
     return rows;
   }, [rows, tab]);
 
@@ -101,14 +110,14 @@ export function TransactionsTable({ rows }: { rows: TransactionRow[] }) {
           All
         </button>
         <button type="button" className={tabClass(tab === "tool")} onClick={() => setTab("tool")}>
-          Tools
+          {toolLabel}
         </button>
         <button
           type="button"
           className={tabClass(tab === "material")}
           onClick={() => setTab("material")}
         >
-          Materials
+          {materialLabel}
         </button>
       </div>
 

@@ -1,15 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { requireSiteAdminSession } from "@/lib/site-context";
+import { getSiteLabels } from "@/lib/site-labels";
 import { EmployeesTable, type EmployeeRow } from "./employees-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmployeesPage() {
   const { siteId } = await requireSiteAdminSession();
-  const employees = await prisma.employee.findMany({
-    where: { site_id: siteId },
-    orderBy: { name: "asc" },
-  });
+  const [employees, labels] = await Promise.all([
+    prisma.employee.findMany({
+      where: { site_id: siteId },
+      orderBy: { name: "asc" },
+    }),
+    getSiteLabels(siteId),
+  ]);
 
   const rows: EmployeeRow[] = employees.map((e) => ({
     id: e.id,
@@ -20,5 +24,5 @@ export default async function EmployeesPage() {
     created_at: e.created_at.toISOString(),
   }));
 
-  return <EmployeesTable rows={rows} />;
+  return <EmployeesTable rows={rows} labels={labels} />;
 }

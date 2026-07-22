@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import {
+  DEFAULT_SITE_LABELS,
+  type SiteLabels,
+} from "@/lib/site-labels";
 
 type SessionRole = "master_admin" | "site_admin" | "site_member";
 
@@ -17,26 +21,32 @@ type SessionInfo = {
   siteName?: string | null;
 };
 
-const memberLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/scan", label: "Scan" },
-] as const;
+type NavLink = { href: string; label: string };
 
-const siteAdminLinks = [
-  ...memberLinks,
-  { href: "/tools", label: "Tools" },
-  { href: "/materials", label: "Materials" },
-  { href: "/employees", label: "Employees" },
-  { href: "/transactions", label: "Transactions" },
-  { href: "/reports", label: "Reports" },
-  { href: "/site-settings", label: "Site Settings" },
-] as const;
+function buildMemberLinks(labels: SiteLabels): NavLink[] {
+  return [
+    { href: "/dashboard", label: labels.dashboard },
+    { href: "/scan", label: labels.scan },
+  ];
+}
 
-const adminLinks = [
+function buildSiteAdminLinks(labels: SiteLabels): NavLink[] {
+  return [
+    ...buildMemberLinks(labels),
+    { href: "/tools", label: labels.tools },
+    { href: "/materials", label: labels.materials },
+    { href: "/employees", label: labels.employees },
+    { href: "/transactions", label: labels.transactions },
+    { href: "/reports", label: labels.reports },
+    { href: "/site-settings", label: "Site Settings" },
+  ];
+}
+
+const adminLinks: NavLink[] = [
   { href: "/admin", label: "Admin Dashboard" },
   { href: "/admin/sites", label: "Master Admin Tools" },
   { href: "/site-settings", label: "Site Settings" },
-] as const;
+];
 
 const linkClassName =
   "rounded-md px-3 py-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]";
@@ -45,12 +55,20 @@ export function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<SessionInfo | null>(null);
+  const [labels, setLabels] = useState<SiteLabels>(DEFAULT_SITE_LABELS);
 
   const sync = useCallback(() => {
     fetch("/api/auth/session")
       .then((r) => r.json())
       .then((data: SessionInfo) => setSession(data))
       .catch(() => setSession({ authenticated: false }));
+
+    fetch("/api/site-labels")
+      .then((r) => r.json())
+      .then((data: { labels?: SiteLabels }) => {
+        if (data.labels) setLabels(data.labels);
+      })
+      .catch(() => setLabels(DEFAULT_SITE_LABELS));
   }, []);
 
   useEffect(() => {
@@ -71,8 +89,8 @@ export function AppNav() {
   const links = isMaster
     ? adminLinks
     : canAccessInventoryNav(session.role ?? "site_member")
-      ? siteAdminLinks
-      : memberLinks;
+      ? buildSiteAdminLinks(labels)
+      : buildMemberLinks(labels);
 
   async function signOut() {
     await fetch("/api/auth/logout", { method: "POST" });

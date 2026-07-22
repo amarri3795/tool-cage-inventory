@@ -5,6 +5,7 @@ import {
   getSiteScope,
 } from "@/lib/site-context";
 import { isSiteAdminRole } from "@/lib/site-access";
+import { getSiteLabels } from "@/lib/site-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -55,8 +56,9 @@ function EmptyRow({ colSpan, message }: { colSpan: number; message: string }) {
 }
 
 export default async function DashboardPage() {
-  const { where, session } = await getSiteScope();
+  const { where, session, siteId } = await getSiteScope();
   const paywall = session ? await getSitePaywallForSession(session) : { blocked: false };
+  const labels = await getSiteLabels(siteId);
 
   const [
     totalTools,
@@ -116,7 +118,9 @@ export default async function DashboardPage() {
       {session && !isSiteAdminRole(session.role) && session.role !== "master_admin" ? (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm">
           <p className="text-[var(--muted)]">
-            Need to manage tools, materials, or employees?{" "}
+            Need to manage {labels.tools.toLowerCase()},{" "}
+            {labels.materials.toLowerCase()}, or{" "}
+            {labels.employees.toLowerCase()}?{" "}
             <Link
               href="/dashboard/admin-login"
               className="font-medium text-[var(--accent)] hover:underline"
@@ -128,30 +132,43 @@ export default async function DashboardPage() {
       ) : null}
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">OpsFlow — Site Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          OpsFlow — {labels.dashboard}
+        </h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
           {session?.siteName
-            ? `Live inventory summary for ${session.siteName}.`
-            : "Live inventory summary for tools and materials."}
+            ? labels.dashboardSubtitle.replace(
+                /your site/i,
+                session.siteName,
+              )
+            : labels.dashboardSubtitle}
         </p>
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Total Tools" value={totalTools} />
+        <StatCard label={`Total ${labels.tools}`} value={totalTools} />
         <StatCard label="Available" value={availableTools} tone="ok" />
         <StatCard label="Checked Out" value={checkedOutTools} tone="warn" />
         <StatCard label="Missing" value={missingTools} tone="danger" />
-        <StatCard label="Low Stock Materials" value={lowStockCount} tone="warn" />
+        <StatCard
+          label={`Low Stock ${labels.materials}`}
+          value={lowStockCount}
+          tone="warn"
+        />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Tools Currently Checked Out</h2>
+        <h2 className="text-lg font-semibold">
+          {labels.tools} Currently Checked Out
+        </h2>
         <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
               <tr>
-                <th className="px-3 py-2 font-medium">Tool ID</th>
-                <th className="px-3 py-2 font-medium">Tool Name</th>
+                <th className="px-3 py-2 font-medium">{labels.toolId}</th>
+                <th className="px-3 py-2 font-medium">
+                  {labels.toolSingular} Name
+                </th>
                 <th className="px-3 py-2 font-medium">Last Checked Out By</th>
                 <th className="px-3 py-2 font-medium">Location</th>
                 <th className="px-3 py-2 font-medium">Checkout Time</th>
@@ -159,7 +176,10 @@ export default async function DashboardPage() {
             </thead>
             <tbody>
               {checkedOutRows.length === 0 ? (
-                <EmptyRow colSpan={5} message="No tools are currently checked out." />
+                <EmptyRow
+                  colSpan={5}
+                  message={`No ${labels.tools.toLowerCase()} are currently checked out.`}
+                />
               ) : (
                 checkedOutRows.map((tool) => (
                   <tr key={tool.id} className="border-b border-[var(--border)] last:border-0">
@@ -177,13 +197,17 @@ export default async function DashboardPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Missing Tools — Last Known User</h2>
+        <h2 className="text-lg font-semibold">
+          Missing {labels.tools} — Last Known User
+        </h2>
         <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
               <tr>
-                <th className="px-3 py-2 font-medium">Tool ID</th>
-                <th className="px-3 py-2 font-medium">Tool Name</th>
+                <th className="px-3 py-2 font-medium">{labels.toolId}</th>
+                <th className="px-3 py-2 font-medium">
+                  {labels.toolSingular} Name
+                </th>
                 <th className="px-3 py-2 font-medium">Last Known User</th>
                 <th className="px-3 py-2 font-medium">Location</th>
                 <th className="px-3 py-2 font-medium">Status</th>
@@ -191,7 +215,10 @@ export default async function DashboardPage() {
             </thead>
             <tbody>
               {missingRows.length === 0 ? (
-                <EmptyRow colSpan={5} message="No missing tools." />
+                <EmptyRow
+                  colSpan={5}
+                  message={`No missing ${labels.tools.toLowerCase()}.`}
+                />
               ) : (
                 missingRows.map((tool) => (
                   <tr key={tool.id} className="border-b border-[var(--border)] last:border-0">
@@ -209,13 +236,17 @@ export default async function DashboardPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Low Stock Materials</h2>
+        <h2 className="text-lg font-semibold">
+          Low Stock {labels.materials}
+        </h2>
         <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
               <tr>
-                <th className="px-3 py-2 font-medium">Material ID</th>
-                <th className="px-3 py-2 font-medium">Material Name</th>
+                <th className="px-3 py-2 font-medium">{labels.materialId}</th>
+                <th className="px-3 py-2 font-medium">
+                  {labels.materialSingular} Name
+                </th>
                 <th className="px-3 py-2 font-medium">Category</th>
                 <th className="px-3 py-2 font-medium">Current Qty</th>
                 <th className="px-3 py-2 font-medium">Min Qty</th>
@@ -224,7 +255,10 @@ export default async function DashboardPage() {
             </thead>
             <tbody>
               {lowStockRows.length === 0 ? (
-                <EmptyRow colSpan={6} message="No materials are below reorder level." />
+                <EmptyRow
+                  colSpan={6}
+                  message={`No ${labels.materials.toLowerCase()} are below reorder level.`}
+                />
               ) : (
                 lowStockRows.map((material) => {
                   const need = Math.max(0, material.min_qty - material.current_qty);

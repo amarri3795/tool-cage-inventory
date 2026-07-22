@@ -8,6 +8,26 @@ import {
   primaryButtonClassName,
   secondaryButtonClassName,
 } from "@/components/form-fields";
+import {
+  DEFAULT_SITE_LABELS,
+  type SiteLabels,
+} from "@/lib/site-labels";
+
+const LABEL_FIELDS: { key: keyof SiteLabels; caption: string }[] = [
+  { key: "dashboard", caption: "Dashboard (nav / title)" },
+  { key: "dashboardSubtitle", caption: "Dashboard subtitle" },
+  { key: "scan", caption: "Scan" },
+  { key: "tools", caption: "Tools (nav / list title)" },
+  { key: "toolSingular", caption: "Tool (singular)" },
+  { key: "toolId", caption: "Tool ID column" },
+  { key: "materials", caption: "Materials (nav / list title)" },
+  { key: "materialSingular", caption: "Material (singular)" },
+  { key: "materialId", caption: "Material ID column" },
+  { key: "employees", caption: "Employees" },
+  { key: "employeeSingular", caption: "Employee (singular)" },
+  { key: "transactions", caption: "Transactions" },
+  { key: "reports", caption: "Reports" },
+];
 
 export function SiteSettingsPanel() {
   const searchParams = useSearchParams();
@@ -23,6 +43,9 @@ export function SiteSettingsPanel() {
   const [siteAdminPassword, setSiteAdminPassword] = useState("");
   const [toolCategories, setToolCategories] = useState("[]");
   const [dashboardPreferences, setDashboardPreferences] = useState("{}");
+  const [uiLabels, setUiLabels] = useState<SiteLabels>({
+    ...DEFAULT_SITE_LABELS,
+  });
   const [isMaster, setIsMaster] = useState(false);
   const [masterSites, setMasterSites] = useState<
     { id: number; name: string }[]
@@ -58,6 +81,7 @@ export function SiteSettingsPanel() {
         site?: { id: number; name: string; contact_email: string };
         toolCategories?: string;
         dashboardPreferences?: string;
+        uiLabels?: SiteLabels;
       };
       if (!res.ok || !data.success || !data.site) {
         setError(data.error ?? "Could not load settings");
@@ -68,6 +92,7 @@ export function SiteSettingsPanel() {
       setContactEmail(data.site.contact_email);
       setToolCategories(data.toolCategories ?? "[]");
       setDashboardPreferences(data.dashboardPreferences ?? "{}");
+      setUiLabels(data.uiLabels ?? { ...DEFAULT_SITE_LABELS });
     } catch {
       setError("Network error loading settings");
     } finally {
@@ -78,6 +103,10 @@ export function SiteSettingsPanel() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  function updateLabel(key: keyof SiteLabels, value: string) {
+    setUiLabels((prev) => ({ ...prev, [key]: value }));
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -94,6 +123,7 @@ export function SiteSettingsPanel() {
         siteAdminPassword: siteAdminPassword || undefined,
         toolCategories,
         dashboardPreferences,
+        uiLabels,
       }),
     });
     const data = (await res.json()) as { success?: boolean; error?: string };
@@ -116,7 +146,8 @@ export function SiteSettingsPanel() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Site Settings</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Update plant credentials, categories, and dashboard preferences.
+          Update plant credentials, labels, categories, and dashboard
+          preferences. OpsFlow brand name stays fixed.
         </p>
       </div>
 
@@ -189,6 +220,34 @@ export function SiteSettingsPanel() {
             placeholder="Leave blank to keep current"
           />
         </label>
+
+        <fieldset className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+          <legend className="px-1 text-sm font-medium text-[var(--accent)]">
+            Labels
+          </legend>
+          <p className="text-xs text-[var(--muted)]">
+            Rename nav items and page titles for this site (URLs stay the same).
+          </p>
+          {LABEL_FIELDS.map(({ key, caption }) => (
+            <label key={key} className="block text-sm">
+              {caption}
+              <input
+                className={`${inputClassName} mt-1`}
+                value={uiLabels[key]}
+                onChange={(e) => updateLabel(key, e.target.value)}
+                required
+              />
+            </label>
+          ))}
+          <button
+            type="button"
+            className={secondaryButtonClassName}
+            onClick={() => setUiLabels({ ...DEFAULT_SITE_LABELS })}
+          >
+            Reset labels to defaults
+          </button>
+        </fieldset>
+
         <label className="block text-sm">
           Tool categories (JSON array)
           <textarea

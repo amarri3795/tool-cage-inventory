@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireSiteAdminSession } from "@/lib/site-context";
+import { getSiteLabels } from "@/lib/site-labels";
 import type { InventoryReportSummary } from "@/lib/automation/generateInventoryReports";
 import {
   ReportsPanel,
@@ -34,11 +35,14 @@ function asSummary(raw: unknown): InventoryReportSummary {
 
 export default async function ReportsPage() {
   const { siteId } = await requireSiteAdminSession();
-  const reports = await prisma.report.findMany({
-    where: { site_id: siteId },
-    orderBy: { created_at: "desc" },
-    take: 50,
-  });
+  const [reports, labels] = await Promise.all([
+    prisma.report.findMany({
+      where: { site_id: siteId },
+      orderBy: { created_at: "desc" },
+      take: 50,
+    }),
+    getSiteLabels(siteId),
+  ]);
 
   const rows: ReportListItem[] = reports.map((r) => ({
     id: r.id,
@@ -49,5 +53,7 @@ export default async function ReportsPage() {
     summary: asSummary(r.summary),
   }));
 
-  return <ReportsPanel siteId={siteId} rows={rows} />;
+  return (
+    <ReportsPanel siteId={siteId} rows={rows} title={labels.reports} />
+  );
 }

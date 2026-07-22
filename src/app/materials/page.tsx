@@ -1,15 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { requireSiteAdminSession } from "@/lib/site-context";
+import { getSiteLabels } from "@/lib/site-labels";
 import { MaterialsTable, type MaterialRow } from "./materials-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function MaterialsPage() {
   const { siteId } = await requireSiteAdminSession();
-  const materials = await prisma.material.findMany({
-    where: { site_id: siteId },
-    orderBy: { material_id: "asc" },
-  });
+  const [materials, labels] = await Promise.all([
+    prisma.material.findMany({
+      where: { site_id: siteId },
+      orderBy: { material_id: "asc" },
+    }),
+    getSiteLabels(siteId),
+  ]);
 
   const rows: MaterialRow[] = materials.map((m) => ({
     id: m.id,
@@ -24,5 +28,5 @@ export default async function MaterialsPage() {
     last_taken_by: m.last_taken_by,
   }));
 
-  return <MaterialsTable rows={rows} />;
+  return <MaterialsTable rows={rows} labels={labels} />;
 }

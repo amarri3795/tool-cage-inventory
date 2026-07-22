@@ -4,6 +4,13 @@ import {
   requireSiteAdminOrMaster,
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  DEFAULT_SITE_LABELS,
+  parseSiteLabels,
+  serializeSiteLabels,
+  UI_LABELS_SETTING_KEY,
+  type SiteLabels,
+} from "@/lib/site-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -60,12 +67,14 @@ export async function GET(request: Request) {
 
   const toolCategories = settings.find((s) => s.key === "tool_categories");
   const dashboardPrefs = settings.find((s) => s.key === "dashboard_preferences");
+  const uiLabelsRow = settings.find((s) => s.key === UI_LABELS_SETTING_KEY);
 
   return NextResponse.json({
     success: true,
     site,
     toolCategories: toolCategories?.value ?? "[]",
     dashboardPreferences: dashboardPrefs?.value ?? "{}",
+    uiLabels: parseSiteLabels(uiLabelsRow?.value ?? null),
   });
 }
 
@@ -77,6 +86,7 @@ type PatchBody = {
   siteAdminPassword?: string;
   toolCategories?: string;
   dashboardPreferences?: string;
+  uiLabels?: Partial<SiteLabels>;
 };
 
 export async function PATCH(request: Request) {
@@ -178,6 +188,25 @@ export async function PATCH(request: Request) {
         value: body.dashboardPreferences,
       },
       update: { value: body.dashboardPreferences },
+    });
+  }
+
+  if (body.uiLabels != null) {
+    const merged = parseSiteLabels({
+      ...DEFAULT_SITE_LABELS,
+      ...body.uiLabels,
+    });
+    const value = serializeSiteLabels(merged);
+    await prisma.setting.upsert({
+      where: {
+        site_id_key: { site_id: siteId, key: UI_LABELS_SETTING_KEY },
+      },
+      create: {
+        site_id: siteId,
+        key: UI_LABELS_SETTING_KEY,
+        value,
+      },
+      update: { value },
     });
   }
 

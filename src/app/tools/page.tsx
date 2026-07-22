@@ -1,15 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { requireSiteAdminSession } from "@/lib/site-context";
+import { getSiteLabels } from "@/lib/site-labels";
 import { ToolsTable, type ToolRow } from "./tools-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function ToolsPage() {
   const { siteId } = await requireSiteAdminSession();
-  const tools = await prisma.tool.findMany({
-    where: { site_id: siteId },
-    orderBy: { tool_id: "asc" },
-  });
+  const [tools, labels] = await Promise.all([
+    prisma.tool.findMany({
+      where: { site_id: siteId },
+      orderBy: { tool_id: "asc" },
+    }),
+    getSiteLabels(siteId),
+  ]);
 
   const rows: ToolRow[] = tools.map((t) => ({
     id: t.id,
@@ -23,5 +27,5 @@ export default async function ToolsPage() {
     checkout_time: t.checkout_time?.toISOString() ?? null,
   }));
 
-  return <ToolsTable rows={rows} />;
+  return <ToolsTable rows={rows} labels={labels} />;
 }
