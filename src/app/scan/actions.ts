@@ -19,6 +19,10 @@ import {
   type ItemSummary,
 } from "@/lib/scan";
 import { requireSiteScanSession } from "@/lib/site-context";
+import {
+  getSitePreset,
+  scanFeaturesForPreset,
+} from "@/lib/site-presets";
 
 export type LookupEmployeeResult =
   | { ok: true; employee: EmployeeSummary }
@@ -62,10 +66,29 @@ export async function lookupItemAction(
   }
 
   const upper = trimmed.toUpperCase();
+  const features = scanFeaturesForPreset(await getSitePreset(siteId));
+
   if (!upper.startsWith("TL-") && !upper.startsWith("MAT-")) {
     return {
       ok: false,
-      error: 'ID must start with "TL-" (tool) or "MAT-" (material).',
+      error: features.allowToolCheckout
+        ? 'ID must start with "TL-" (tool) or "MAT-" (material).'
+        : 'ID must start with "MAT-" (material / stock).',
+    };
+  }
+
+  if (upper.startsWith("TL-") && !features.allowToolCheckout) {
+    return {
+      ok: false,
+      error:
+        "Equipment check-out is not enabled for this site preset. Scan a MAT- stock ID instead.",
+    };
+  }
+
+  if (upper.startsWith("MAT-") && !features.allowMaterialTake) {
+    return {
+      ok: false,
+      error: "Material takes are not enabled for this site preset.",
     };
   }
 
@@ -107,6 +130,21 @@ export async function submitScanAction(input: {
     return {
       ok: false,
       error: `No tool or material found for "${itemInput}".`,
+    };
+  }
+
+  const features = scanFeaturesForPreset(await getSitePreset(siteId));
+  if (item.kind === "tool" && !features.allowToolCheckout) {
+    return {
+      ok: false,
+      error:
+        "Equipment check-out is not enabled for this site preset. Use a MAT- stock ID.",
+    };
+  }
+  if (item.kind === "material" && !features.allowMaterialTake) {
+    return {
+      ok: false,
+      error: "Material takes are not enabled for this site preset.",
     };
   }
 

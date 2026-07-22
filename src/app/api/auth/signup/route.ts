@@ -6,6 +6,15 @@ import {
   verifyMasterAdmin,
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  serializeSiteLabels,
+  UI_LABELS_SETTING_KEY,
+} from "@/lib/site-labels";
+import {
+  defaultLabelsForPreset,
+  isSitePresetId,
+  type SitePresetId,
+} from "@/lib/site-presets";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +34,7 @@ export async function POST(request: Request) {
   const sitePassword = String(body.sitePassword ?? body.password ?? "");
   const contactEmail = String(body.contactEmail ?? "").trim();
   const rememberMe = Boolean(body.rememberMe);
+  const presetRaw = body.preset;
 
   // Master admin can enter ID/password in the signup fields to bypass
   if (
@@ -53,6 +63,17 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
+  if (!isSitePresetId(presetRaw)) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Select an operation preset for this site.",
+      },
+      { status: 400 },
+    );
+  }
+  const preset: SitePresetId = presetRaw;
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
     return NextResponse.json(
@@ -88,14 +109,26 @@ export async function POST(request: Request) {
   const adminPlain =
     process.env.DEFAULT_SITE_ADMIN_PASSWORD?.trim() || sitePassword;
   const site_admin_password_hash = await hashPassword(adminPlain);
+  const labels = defaultLabelsForPreset(preset);
 
-  const site = await prisma.site.create({
-    data: {
-      name,
-      password_hash,
-      site_admin_password_hash,
-      contact_email: contactEmail,
-    },
+  const site = await prisma.$transaction(async (tx) => {
+    const created = await tx.site.create({
+      data: {
+        name,
+        password_hash,
+        site_admin_password_hash,
+        contact_email: contactEmail,
+        preset,
+      },
+    });
+    await tx.setting.create({
+      data: {
+        site_id: created.id,
+        key: UI_LABELS_SETTING_KEY,
+        value: serializeSiteLabels(labels),
+      },
+    });
+    return created;
   });
 
   await setSessionCookie(
@@ -108,6 +141,7 @@ export async function POST(request: Request) {
     role: "site_member",
     siteId: site.id,
     siteName: site.name,
+    preset,
     redirectTo: "/dashboard",
   });
 }

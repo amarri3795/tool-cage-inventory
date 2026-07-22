@@ -28,7 +28,13 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function ScanForm() {
+export function ScanForm({
+  allowToolCheckout = true,
+  allowMaterialTake = true,
+}: {
+  allowToolCheckout?: boolean;
+  allowMaterialTake?: boolean;
+}) {
   const [badgeInput, setBadgeInput] = useState("");
   const [itemInput, setItemInput] = useState("");
   const [action, setAction] = useState("");
@@ -47,8 +53,11 @@ export function ScanForm() {
 
   const actionOptions = useMemo(() => {
     if (!item) return [] as string[];
-    return item.kind === "tool" ? TOOL_ACTION_OPTIONS : MATERIAL_ACTION_OPTIONS;
-  }, [item]);
+    if (item.kind === "tool") {
+      return allowToolCheckout ? TOOL_ACTION_OPTIONS : [];
+    }
+    return allowMaterialTake ? MATERIAL_ACTION_OPTIONS : [];
+  }, [item, allowToolCheckout, allowMaterialTake]);
 
   const qtyPurposeLabel =
     item?.kind === "material" ? "Quantity" : "Purpose / notes";
@@ -228,7 +237,11 @@ export function ScanForm() {
             </label>
 
             <label className="block">
-              <span className="text-sm font-medium">Tool or Material ID</span>
+              <span className="text-sm font-medium">
+                {allowToolCheckout
+                  ? "Tool or Material ID"
+                  : "Material / stock ID"}
+              </span>
               <div className="mt-1 flex gap-2">
                 <input
                   type="text"
@@ -241,7 +254,9 @@ export function ScanForm() {
                   onBlur={() => {
                     if (itemInput.trim()) resolveItem();
                   }}
-                  placeholder="TL-001 or MAT-001"
+                  placeholder={
+                    allowToolCheckout ? "TL-001 or MAT-001" : "MAT-001"
+                  }
                   className="w-full rounded-md border border-[var(--border)] bg-white surface-light px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
                   autoComplete="off"
                 />

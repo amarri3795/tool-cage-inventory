@@ -4,6 +4,10 @@ import {
   getSitePaywallForSession,
 } from "@/lib/site-context";
 import { getSiteLabels } from "@/lib/site-labels";
+import {
+  getSitePreset,
+  scanFeaturesForPreset,
+} from "@/lib/site-presets";
 import Link from "next/link";
 
 export default async function ScanPage() {
@@ -14,6 +18,7 @@ export default async function ScanPage() {
       ? session.siteId
       : null;
   const labels = await getSiteLabels(siteId);
+  const features = scanFeaturesForPreset(await getSitePreset(siteId));
 
   if (paywall.blocked) {
     return (
@@ -33,14 +38,18 @@ export default async function ScanPage() {
     );
   }
 
+  const helpText = features.allowToolCheckout
+    ? `Look up a badge and a TL-/MAT- item, review details, then submit check-out, check-in, issue, or receive.`
+    : `Look up a badge and a MAT- stock ID, then issue or receive quantity. Equipment check-out is hidden for this site preset.`;
+
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">{labels.scan}</h1>
-      <p className="mt-2 mb-6 text-sm text-[var(--muted)]">
-        Look up a badge and a TL-/MAT- item, review details, then submit
-        check-out, check-in, issue, or receive.
-      </p>
-      <ScanForm />
+      <p className="mt-2 mb-6 text-sm text-[var(--muted)]">{helpText}</p>
+      <ScanForm
+        allowToolCheckout={features.allowToolCheckout}
+        allowMaterialTake={features.allowMaterialTake}
+      />
     </div>
   );
 }

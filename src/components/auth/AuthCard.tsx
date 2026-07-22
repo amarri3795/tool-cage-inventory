@@ -3,17 +3,12 @@
 
 
 import Link from "next/link";
-
 import { useRouter } from "next/navigation";
-
 import { useEffect, useState } from "react";
-
-
+import { SITE_PRESETS, type SitePresetId } from "@/lib/site-presets";
 
 type Props = {
-
   mode: "site-login" | "signup" | "admin-login" | "site-admin-login";
-
 };
 
 
@@ -110,6 +105,8 @@ export function AuthCard({ mode }: Props) {
 
   const [contactEmail, setContactEmail] = useState("");
 
+  const [preset, setPreset] = useState<SitePresetId>("checkout");
+
   const [rememberMe, setRememberMe] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -185,6 +182,8 @@ export function AuthCard({ mode }: Props) {
                   sitePassword: password,
 
                   contactEmail,
+
+                  preset,
 
                   rememberMe,
 
@@ -434,6 +433,80 @@ export function AuthCard({ mode }: Props) {
               />
 
             </label>
+
+          ) : null}
+
+
+
+          {mode === "signup" ? (
+
+            <fieldset className="space-y-2">
+
+              <legend className="text-sm font-medium text-[var(--accent)]">
+
+                Operation preset
+
+              </legend>
+
+              <p className="text-xs text-[var(--muted)]">
+
+                Chooses your dashboard and scan focus. You can change this later in Site Settings.
+
+              </p>
+
+              <div className="grid gap-2">
+
+                {SITE_PRESETS.map((p) => (
+
+                  <label
+
+                    key={p.id}
+
+                    className={`cursor-pointer rounded-lg border px-3 py-2 text-left text-sm ${
+
+                      preset === p.id
+
+                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+
+                        : "border-[var(--border)] bg-[var(--card)]"
+
+                    }`}
+
+                  >
+
+                    <input
+
+                      type="radio"
+
+                      name="preset"
+
+                      className="sr-only"
+
+                      checked={preset === p.id}
+
+                      onChange={() => setPreset(p.id)}
+
+                    />
+
+                    <span className="font-medium text-[var(--foreground)]">
+
+                      {p.title}
+
+                    </span>
+
+                    <span className="mt-0.5 block text-xs text-[var(--muted)]">
+
+                      {p.description}
+
+                    </span>
+
+                  </label>
+
+                ))}
+
+              </div>
+
+            </fieldset>
 
           ) : null}
 

@@ -641,11 +641,13 @@ async function ensureDefaultSite() {
       password_hash,
       site_admin_password_hash,
       contact_email: DEFAULT_SITE_EMAIL,
+      preset: "checkout",
     },
     update: {
       password_hash,
       site_admin_password_hash,
       contact_email: DEFAULT_SITE_EMAIL,
+      preset: "checkout",
     },
   });
 }

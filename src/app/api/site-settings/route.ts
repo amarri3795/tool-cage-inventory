@@ -11,6 +11,13 @@ import {
   UI_LABELS_SETTING_KEY,
   type SiteLabels,
 } from "@/lib/site-labels";
+import {
+  defaultLabelsForPreset,
+  isSitePresetId,
+  parseSitePreset,
+  SITE_PRESETS,
+  type SitePresetId,
+} from "@/lib/site-presets";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +58,7 @@ export async function GET(request: Request) {
       id: true,
       name: true,
       contact_email: true,
+      preset: true,
     },
   });
   if (!site) {
@@ -71,7 +79,11 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     success: true,
-    site,
+    site: {
+      ...site,
+      preset: parseSitePreset(site.preset),
+    },
+    presets: SITE_PRESETS,
     toolCategories: toolCategories?.value ?? "[]",
     dashboardPreferences: dashboardPrefs?.value ?? "{}",
     uiLabels: parseSiteLabels(uiLabelsRow?.value ?? null),
@@ -87,6 +99,8 @@ type PatchBody = {
   toolCategories?: string;
   dashboardPreferences?: string;
   uiLabels?: Partial<SiteLabels>;
+  preset?: SitePresetId;
+  resetLabelsToPreset?: boolean;
 };
 
 export async function PATCH(request: Request) {
@@ -123,6 +137,7 @@ export async function PATCH(request: Request) {
     contact_email?: string;
     password_hash?: string;
     site_admin_password_hash?: string;
+    preset?: string;
   } = {};
 
   if (body.displayName?.trim()) {
@@ -163,6 +178,18 @@ export async function PATCH(request: Request) {
     data.site_admin_password_hash = await hashPassword(body.siteAdminPassword);
   }
 
+  let presetForLabels: SitePresetId | null = null;
+  if (body.preset != null) {
+    if (!isSitePresetId(body.preset)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid operation preset." },
+        { status: 400 },
+      );
+    }
+    data.preset = body.preset;
+    presetForLabels = body.preset;
+  }
+
   if (Object.keys(data).length) {
     await prisma.site.update({ where: { id: siteId }, data });
   }
@@ -191,7 +218,22 @@ export async function PATCH(request: Request) {
     });
   }
 
-  if (body.uiLabels != null) {
+  const shouldResetLabels =
+    presetForLabels != null && body.resetLabelsToPreset === true;
+  if (shouldResetLabels && presetForLabels) {
+    const value = serializeSiteLabels(defaultLabelsForPreset(presetForLabels));
+    await prisma.setting.upsert({
+      where: {
+        site_id_key: { site_id: siteId, key: UI_LABELS_SETTING_KEY },
+      },
+      create: {
+        site_id: siteId,
+        key: UI_LABELS_SETTING_KEY,
+        value,
+      },
+      update: { value },
+    });
+  } else if (body.uiLabels != null) {
     const merged = parseSiteLabels({
       ...DEFAULT_SITE_LABELS,
       ...body.uiLabels,

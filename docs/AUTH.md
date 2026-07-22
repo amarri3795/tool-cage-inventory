@@ -27,11 +27,24 @@ After changing env vars, **Redeploy**.
 ## App flow
 
 1. `/` — Site Login (plant name + **site/member** password)
-2. `/signup` — Register a new plant (creates site admin password; session starts as site member)
+2. `/signup` — Register a new plant (**pick an operation preset**), creates site admin password; session starts as site member
 3. `/dashboard/admin-login` — Elevate to site admin for that plant
 4. `/admin/login` — Master admin → `/admin` and `/admin/sites`
 5. `/reset-password` — Request reset (token stored; master can reset in Master Admin Tools)
-6. `/site-settings` — Site admin (or master with `?siteId=`)
+6. `/site-settings` — Site admin (or master with `?siteId=`) — change preset, labels, passwords
+
+## Operation presets
+
+Chosen at signup (changeable in Site Settings):
+
+| Id | Name | Dashboard / Scan |
+|----|------|------------------|
+| `checkout` | Equipment check-out | Check-out / missing focus; tool scan enabled |
+| `inventory` | Inventory tracker | On-hand qty + low stock; tool check-out hidden |
+| `full` | Full plant ops | Both check-out and low stock |
+| `consumables` | Consumables | Stock levels + recent takes; tool check-out hidden |
+
+BowlingGreenKY is seeded as `checkout`.
 
 ## Paywall (master only)
 

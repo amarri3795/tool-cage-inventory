@@ -22,6 +22,8 @@ model Site {
   free_trial_preset        String?
   paywall_paid             Boolean               @default(false)
   trial_started_at         DateTime?
+  /// Operation mode: checkout | inventory | full | consumables
+  preset                   String                @default("checkout")
   created_at               DateTime              @default(now())
   updated_at               DateTime              @updatedAt
   employees                Employee[]

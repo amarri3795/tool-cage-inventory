@@ -12,6 +12,11 @@ import {
   DEFAULT_SITE_LABELS,
   type SiteLabels,
 } from "@/lib/site-labels";
+import {
+  defaultLabelsForPreset,
+  SITE_PRESETS,
+  type SitePresetId,
+} from "@/lib/site-presets";
 
 const LABEL_FIELDS: { key: keyof SiteLabels; caption: string }[] = [
   { key: "dashboard", caption: "Dashboard (nav / title)" },
@@ -43,6 +48,9 @@ export function SiteSettingsPanel() {
   const [siteAdminPassword, setSiteAdminPassword] = useState("");
   const [toolCategories, setToolCategories] = useState("[]");
   const [dashboardPreferences, setDashboardPreferences] = useState("{}");
+  const [preset, setPreset] = useState<SitePresetId>("checkout");
+  const [initialPreset, setInitialPreset] = useState<SitePresetId>("checkout");
+  const [resetLabelsToPreset, setResetLabelsToPreset] = useState(true);
   const [uiLabels, setUiLabels] = useState<SiteLabels>({
     ...DEFAULT_SITE_LABELS,
   });
@@ -78,7 +86,12 @@ export function SiteSettingsPanel() {
       const data = (await res.json()) as {
         success?: boolean;
         error?: string;
-        site?: { id: number; name: string; contact_email: string };
+        site?: {
+          id: number;
+          name: string;
+          contact_email: string;
+          preset?: SitePresetId;
+        };
         toolCategories?: string;
         dashboardPreferences?: string;
         uiLabels?: SiteLabels;
@@ -87,11 +100,15 @@ export function SiteSettingsPanel() {
         setError(data.error ?? "Could not load settings");
         return;
       }
+      const loadedPreset = data.site.preset ?? "checkout";
       setSiteId(data.site.id);
       setDisplayName(data.site.name);
       setContactEmail(data.site.contact_email);
       setToolCategories(data.toolCategories ?? "[]");
       setDashboardPreferences(data.dashboardPreferences ?? "{}");
+      setPreset(loadedPreset);
+      setInitialPreset(loadedPreset);
+      setResetLabelsToPreset(true);
       setUiLabels(data.uiLabels ?? { ...DEFAULT_SITE_LABELS });
     } catch {
       setError("Network error loading settings");
@@ -108,10 +125,18 @@ export function SiteSettingsPanel() {
     setUiLabels((prev) => ({ ...prev, [key]: value }));
   }
 
+  function onPresetChange(next: SitePresetId) {
+    setPreset(next);
+    if (resetLabelsToPreset) {
+      setUiLabels(defaultLabelsForPreset(next));
+    }
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
     setError(null);
+    const presetChanged = preset !== initialPreset;
     const res = await fetch("/api/site-settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -123,7 +148,9 @@ export function SiteSettingsPanel() {
         siteAdminPassword: siteAdminPassword || undefined,
         toolCategories,
         dashboardPreferences,
-        uiLabels,
+        preset,
+        resetLabelsToPreset: presetChanged && resetLabelsToPreset,
+        uiLabels: presetChanged && resetLabelsToPreset ? undefined : uiLabels,
       }),
     });
     const data = (await res.json()) as { success?: boolean; error?: string };
@@ -146,8 +173,8 @@ export function SiteSettingsPanel() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Site Settings</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Update plant credentials, labels, categories, and dashboard
-          preferences. OpsFlow brand name stays fixed.
+          Update plant credentials, operation preset, labels, and preferences.
+          OpsFlow brand name stays fixed.
         </p>
       </div>
 
@@ -223,6 +250,49 @@ export function SiteSettingsPanel() {
 
         <fieldset className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
           <legend className="px-1 text-sm font-medium text-[var(--accent)]">
+            Operation preset
+          </legend>
+          <p className="text-xs text-[var(--muted)]">
+            Controls dashboard layout and whether check-out vs stock surfaces
+            show.
+          </p>
+          <label className="block text-sm">
+            Preset
+            <select
+              className={`${inputClassName} mt-1`}
+              value={preset}
+              onChange={(e) => onPresetChange(e.target.value as SitePresetId)}
+            >
+              {SITE_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="text-xs text-[var(--muted)]">
+            {SITE_PRESETS.find((p) => p.id === preset)?.description}
+          </p>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={resetLabelsToPreset}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setResetLabelsToPreset(checked);
+                if (checked) setUiLabels(defaultLabelsForPreset(preset));
+              }}
+            />
+            <span>
+              Reset labels to this preset&apos;s defaults when saving a preset
+              change
+            </span>
+          </label>
+        </fieldset>
+
+        <fieldset className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+          <legend className="px-1 text-sm font-medium text-[var(--accent)]">
             Labels
           </legend>
           <p className="text-xs text-[var(--muted)]">
@@ -242,9 +312,9 @@ export function SiteSettingsPanel() {
           <button
             type="button"
             className={secondaryButtonClassName}
-            onClick={() => setUiLabels({ ...DEFAULT_SITE_LABELS })}
+            onClick={() => setUiLabels(defaultLabelsForPreset(preset))}
           >
-            Reset labels to defaults
+            Reset labels to preset defaults
           </button>
         </fieldset>
 

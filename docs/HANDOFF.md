@@ -33,7 +33,7 @@ Open http://localhost:3000
 
 ## What this product is today
 
-**OpsFlow** = multi-site tool / material inventory SaaS (tool-cage successor), dark/gold UI, logo in `public/opsflow-logo.png`.
+**OpsFlow** = multi-site inventory SaaS (tool-cage successor), dark/gold UI, logo in `public/opsflow-logo.png`. Sites pick an **operation preset** at signup (`checkout`, `inventory`, `full`, `consumables`) that drives dashboard layout, default labels, and whether equipment check-out appears in Scan.
 
 | Role | How to log in | Access |
 |------|----------------|--------|
